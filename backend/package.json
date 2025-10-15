@@ -1,0 +1,39 @@
+{
+  "name": "techbit-backend",
+  "version": "1.0.0",
+  "description": "Techbit backend API with feed generation, knowledge graph, and P2P features",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node src/index.js",
+    "test": "jest",
+    "test:api": "node examples/api-tests.js"
+  },
+  "keywords": [
+    "atproto",
+    "feed-generator",
+    "knowledge-graph",
+    "p2p",
+    "ipfs",
+    "techbit"
+  ],
+  "author": "Techbit Team",
+  "license": "MIT",
+  "dependencies": {
+    "@atproto/api": "^0.1.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.0",
+    "graphql": "^16.0.0",
+    "ipfs-http-client": "^56.0.0",
+    "libp2p": "^0.40.0",
+    "neo4j-driver": "^5.0.0",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

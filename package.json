@@ -1,0 +1,19 @@
+{
+  "name": "techbit",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend",
+    "contracts"
+  ],
+  "scripts": {
+    "install": "yarn install",
+    "build": "yarn workspaces foreach run build",
+    "test": "yarn workspaces foreach run test",
+    "start": "docker-compose up"
+  },
+  "devDependencies": {
+    "typescript": "^4.9.0"
+  }
+}

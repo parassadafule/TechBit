@@ -1,25 +1,25 @@
-// import { AtpAgent } from '@atproto/api'; // Placeholder
+
 import { calculateNovelty, calculateNoveltyAsync } from './scoring/novelty.js';
 import { calculateImpact } from './scoring/impact.js';
 import { mockPosts, mockUsers } from '../mockData.js';
 
 export function createFeedGenerator(agent) {
-  // Custom feed logic
+  
   return {
     async getFeed(params = {}) {
       const { limit = 10, offset = 0, sortBy = 'score', filterTags = [] } = params;
       
-      // Fetch posts (using mock data)
+      
       let posts = [...mockPosts];
       
-      // Apply tag filtering if specified
+      
       if (filterTags.length > 0) {
         posts = posts.filter(post => 
           post.tags && post.tags.some(tag => filterTags.includes(tag))
         );
       }
       
-      // Score and rank each post (await ML novelty when available)
+      
       const scoredPosts = await Promise.all(posts.map(async (post) => {
         const [noveltyScore, impactScore] = await Promise.all([
           calculateNoveltyAsync(post),
@@ -40,7 +40,7 @@ export function createFeedGenerator(agent) {
         };
       }));
       
-      // Sort by specified criteria
+      
       if (sortBy === 'score') {
         scoredPosts.sort((a, b) => b.score - a.score);
       } else if (sortBy === 'timestamp') {
@@ -49,7 +49,7 @@ export function createFeedGenerator(agent) {
         scoredPosts.sort((a, b) => (b.post.likes || 0) - (a.post.likes || 0));
       }
       
-      // Apply pagination
+      
       const paginatedPosts = scoredPosts.slice(offset, offset + limit);
       
       return { 

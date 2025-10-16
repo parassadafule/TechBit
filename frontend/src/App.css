@@ -28,7 +28,7 @@ body {
   color: white;
   padding: 1rem 2rem;
   text-align: center;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .app-header h1 {
@@ -62,7 +62,7 @@ body {
   flex: 1;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
   overflow: hidden;
 }
 
@@ -71,8 +71,43 @@ body {
   background: white;
   border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
   height: fit-content;
+}
+
+/* Mobile navigation toggle button (visible on small screens) */
+.mobile-nav-toggle {
+  display: none;
+  /* shown via media query */
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 1001;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 1.25rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* Backdrop shown when mobile nav is open */
+.mobile-nav-backdrop {
+  display: none;
+  /* shown via media query when open */
+}
+
+/* Mobile drawer modifications */
+.controls-container.open {
+  position: fixed;
+  left: 0.5rem;
+  top: 3.5rem;
+  z-index: 1002;
+  width: calc(100% - 1rem);
+  max-width: 320px;
+  height: auto;
 }
 
 .controls-header h3 {
@@ -101,6 +136,20 @@ body {
   transition: all 0.2s ease;
   text-align: left;
   font-size: 0.95rem;
+}
+
+/* Remove default anchor underline for nav links (Links use class .view-btn) */
+.view-btn,
+.view-btn:link,
+.view-btn:visited {
+  text-decoration: none;
+  color: inherit;
+  /* keep color inheritance so active state works */
+}
+
+.view-btn:focus {
+  outline: 2px solid rgba(102, 126, 234, 0.35);
+  outline-offset: 2px;
 }
 
 .view-btn:hover {
@@ -241,12 +290,59 @@ body {
   border: 1px solid #eee;
   border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   transition: box-shadow 0.2s ease;
 }
 
 .post-card:hover {
-  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive: mobile behavior */
+@media (max-width: 768px) {
+  .app-content {
+    padding-top: 3.5rem;
+    /* space for mobile toggle */
+    gap: 0.5rem;
+  }
+
+  /* Hide desktop sidebar by default */
+  .controls-container {
+    display: none;
+  }
+
+  /* Show mobile toggle */
+  .mobile-nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* When controls open, display as a drawer */
+  .controls-container.open {
+    display: block;
+    background: white;
+    padding: 1rem;
+    border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+    transform: translateY(0);
+  }
+
+  /* Full-screen backdrop to dim the page */
+  .mobile-nav-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 1000;
+  }
+
+  /* Make main content full width under mobile layout */
+  .main-content {
+    width: 100%;
+    margin-left: 0;
+    border-radius: 8px;
+  }
 }
 
 .post-header {
@@ -486,7 +582,7 @@ body {
   background: white;
   padding: 1.5rem;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   border: 1px solid #eee;
 }
 
@@ -561,7 +657,7 @@ body {
   background: white;
   padding: 1.5rem;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   border: 1px solid #eee;
 }
 
@@ -732,7 +828,7 @@ body {
   background: white;
   padding: 1.5rem;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   border: 1px solid #eee;
 }
 
@@ -1015,7 +1111,7 @@ body {
   background: white;
   padding: 1.5rem;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   border: 1px solid #eee;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -1023,7 +1119,7 @@ body {
 
 .user-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .user-avatar {
@@ -1106,7 +1202,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1260,7 +1356,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1371,7 +1467,7 @@ body {
   background: white;
   padding: 1.5rem;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   border: 1px solid #eee;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -1380,7 +1476,7 @@ body {
 .project-card:hover,
 .project-card.selected {
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   border-color: #667eea;
 }
 
@@ -1425,7 +1521,7 @@ body {
   min-width: 400px;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   border: 1px solid #eee;
   padding: 1.5rem;
 }

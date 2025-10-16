@@ -5,14 +5,6 @@ import { mockPDSData } from '../mockData.js';
 let pdsInstance = null;
 
 export async function startPDS() {
-  // const libp2p = await createLibp2p({
-  //   // Config for P2P networking
-  // });
-  
-  // const ipfs = create();
-  
-  // Handle data syncing via IPFS/libp2p
-  
   pdsInstance = {
     ...mockPDSData,
     startTime: new Date().toISOString(),

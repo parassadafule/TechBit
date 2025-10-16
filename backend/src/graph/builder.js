@@ -2,7 +2,6 @@
 import { mockGraphNodes, mockKnowledgeGaps } from '../mockData.js';
 import { create as createIpfsClient } from 'ipfs-http-client';
 
-// const driver = neo4j.driver('bolt://localhost:7687');
 
 let graphData = {
   nodes: [...mockGraphNodes],

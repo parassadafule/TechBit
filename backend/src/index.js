@@ -1,5 +1,4 @@
 import express from 'express';
-// import { AtpAgent } from '@atproto/api'; // Placeholder: ATProto API not available
 import { createFeedGenerator } from './feedGenerator/generator.js';
 import { startPDS, getPDSStatus, getPeerList, getStorageInfo, syncData, publishContent } from './pds/server.js';
 import { initGraph, addNode, connectNodes, findRelatedNodes } from './graph/builder.js';
@@ -12,38 +11,36 @@ import { mockPosts, mockUsers } from './mockData.js';
 import db from './db.js';
 
 import dotenv from 'dotenv';
-dotenv.config(); // Load environment variables
+dotenv.config();
 
 
 const app = express();
 const port = process.env.PORT || 3002;
 
-// Middleware
 app.use(express.json());
 
-// CORS Middleware - Allow requests from frontend
+
 app.use((req, res, next) => {
-  // Allow requests from any origin (for development)
+
   res.header('Access-Control-Allow-Origin', '*');
-  
-  // Allow specific headers
+
+
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
-  // Allow specific HTTP methods
+
+
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  
-  // Handle preflight requests
+
+
   if (req.method === 'OPTIONS') {
     return res.status(200).json({});
   }
-  
+
   next();
 });
 
-// Basic route with comprehensive API documentation
 app.get('/', (req, res) => {
-  res.json({ 
-    message: 'Welcome to Techbit Backend API', 
+  res.json({
+    message: 'Welcome to Techbit Backend API',
     status: 'running',
     version: '1.0.0',
     endpoints: {
@@ -97,7 +94,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// Feed endpoints
 app.get('/feed', async (req, res) => {
   try {
     const { limit, offset, sortBy, filterTags } = req.query;
@@ -107,7 +103,7 @@ app.get('/feed', async (req, res) => {
       sortBy: sortBy || 'score',
       filterTags: filterTags ? filterTags.split(',') : []
     };
-    
+
     const feedGenerator = createFeedGenerator(null);
     const result = await feedGenerator.getFeed(params);
     res.json(result);
@@ -202,7 +198,7 @@ app.post('/pds/publish', async (req, res) => {
 
 // Graph endpoints
 app.get('/graph/status', (req, res) => {
-  res.json({ 
+  res.json({
     status: 'initialized',
     message: 'Knowledge graph is ready',
     timestamp: new Date().toISOString()
@@ -252,7 +248,7 @@ app.get('/graph/node/:nodeId', (req, res) => {
   try {
     const { depth } = req.query;
     const result = queryNodeConnections(
-      req.params.nodeId, 
+      req.params.nodeId,
       depth ? parseInt(depth) : 1
     );
     res.json(result);
@@ -418,7 +414,7 @@ app.post('/federated/report', (req, res) => {
 
 // User endpoints
 app.get('/users', (req, res) => {
-  res.json({ 
+  res.json({
     users: Object.entries(mockUsers).map(([username, data]) => ({
       username,
       ...data
@@ -432,7 +428,7 @@ app.get('/users/:username', (req, res) => {
   if (!user) {
     return res.status(404).json({ error: 'User not found' });
   }
-  res.json({ 
+  res.json({
     username: req.params.username,
     ...user
   });
@@ -445,13 +441,13 @@ app.get('/users/:username', (req, res) => {
 async function startServer() {
   try {
     // await agent.login({ identifier: process.env.BSKY_USERNAME, password: process.env.BSKY_PASSWORD });
-    
+
     // Start PDS
     await startPDS();
-    
+
     // Init knowledge graph
     await initGraph();
-    
+
     app.listen(port, () => {
       console.log(`\n${'='.repeat(50)}`);
       console.log(`✓ Techbit Backend Server Running`);

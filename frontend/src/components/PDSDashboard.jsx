@@ -50,7 +50,7 @@ const PDSDashboard = () => {
     if (!syncHash.trim()) return;
 
     try {
-      const result = await pdsAPI.sync(syncHash);
+      await pdsAPI.sync(syncHash);
       alert('Data synchronized successfully!');
       setSyncHash('');
     } catch (error) {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 const ProjectHub = () => {
-  const [projects, setProjects] = useState([
+  const [projects] = useState([
     {
       id: 1,
       title: "Quantum Computing Research",

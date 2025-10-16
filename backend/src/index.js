@@ -9,6 +9,11 @@ import { calculateNovelty } from './feedGenerator/scoring/novelty.js';
 import { calculateImpact } from './feedGenerator/scoring/impact.js';
 import { tryCallMlService } from './utils/index.js';
 import { mockPosts, mockUsers } from './mockData.js';
+import db from './db.js';
+
+import dotenv from 'dotenv';
+dotenv.config(); // Load environment variables
+
 
 const app = express();
 const port = process.env.PORT || 3002;

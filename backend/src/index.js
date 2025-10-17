@@ -25,25 +25,25 @@ app.use(express.json());
 app.use((req, res, next) => {
   // Allow requests from any origin (for development)
   res.header('Access-Control-Allow-Origin', '*');
-  
+
   // Allow specific headers
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
+
   // Allow specific HTTP methods
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  
+
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return res.status(200).json({});
   }
-  
+
   next();
 });
 
 // Basic route with comprehensive API documentation
 app.get('/', (req, res) => {
-  res.json({ 
-    message: 'Welcome to Techbit Backend API', 
+  res.json({
+    message: 'Welcome to Techbit Backend API',
     status: 'running',
     version: '1.0.0',
     endpoints: {
@@ -107,7 +107,7 @@ app.get('/feed', async (req, res) => {
       sortBy: sortBy || 'score',
       filterTags: filterTags ? filterTags.split(',') : []
     };
-    
+
     const feedGenerator = createFeedGenerator(null);
     const result = await feedGenerator.getFeed(params);
     res.json(result);
@@ -202,7 +202,7 @@ app.post('/pds/publish', async (req, res) => {
 
 // Graph endpoints
 app.get('/graph/status', (req, res) => {
-  res.json({ 
+  res.json({
     status: 'initialized',
     message: 'Knowledge graph is ready',
     timestamp: new Date().toISOString()
@@ -252,7 +252,7 @@ app.get('/graph/node/:nodeId', (req, res) => {
   try {
     const { depth } = req.query;
     const result = queryNodeConnections(
-      req.params.nodeId, 
+      req.params.nodeId,
       depth ? parseInt(depth) : 1
     );
     res.json(result);
@@ -399,6 +399,32 @@ app.post('/rag/retrieve', async (req, res) => {
   }
 });
 
+// Auth routes: receives profile from frontend after Auth0 login and creates/updates DB user
+import { createOrUpdateUserFromAuth0, findUserByAuth0Id } from './userService.js';
+
+app.post('/auth/signup', async (req, res) => {
+  try {
+    const profile = req.body?.profile;
+    if (!profile || !profile.sub) return res.status(400).json({ error: 'profile with sub is required' });
+    const user = await createOrUpdateUserFromAuth0(profile);
+    res.json({ user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/auth/me', async (req, res) => {
+  try {
+    const auth0Id = req.query.auth0Id || req.headers['x-auth0-id'];
+    if (!auth0Id) return res.status(400).json({ error: 'auth0Id required' });
+    const user = await findUserByAuth0Id(auth0Id);
+    if (!user) return res.status(404).json({ error: 'user not found' });
+    res.json({ user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Federated learning hooks (stubs)
 app.get('/federated/status', (req, res) => {
   res.json({
@@ -418,7 +444,7 @@ app.post('/federated/report', (req, res) => {
 
 // User endpoints
 app.get('/users', (req, res) => {
-  res.json({ 
+  res.json({
     users: Object.entries(mockUsers).map(([username, data]) => ({
       username,
       ...data
@@ -432,7 +458,7 @@ app.get('/users/:username', (req, res) => {
   if (!user) {
     return res.status(404).json({ error: 'User not found' });
   }
-  res.json({ 
+  res.json({
     username: req.params.username,
     ...user
   });
@@ -445,13 +471,13 @@ app.get('/users/:username', (req, res) => {
 async function startServer() {
   try {
     // await agent.login({ identifier: process.env.BSKY_USERNAME, password: process.env.BSKY_PASSWORD });
-    
+
     // Start PDS
     await startPDS();
-    
+
     // Init knowledge graph
     await initGraph();
-    
+
     app.listen(port, () => {
       console.log(`\n${'='.repeat(50)}`);
       console.log(`✓ Techbit Backend Server Running`);

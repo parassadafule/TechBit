@@ -3,7 +3,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 
 const SignInPage = () => {
     const { loginWithRedirect, isLoading, error } = useAuth0();
-    const returnTo = '/signin';
+    const returnTo = '/signup-callback';
 
     return (
         <div className="signin-page">

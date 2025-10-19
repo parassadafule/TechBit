@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Auth0Provider } from '@auth0/auth0-react';
 import Controls from './components/Controls';
+import { useAuth0 } from '@auth0/auth0-react';
 import Feed from './components/Feed';
 import KnowledgeGraph from './components/KnowledgeGraph';
 import PDSDashboard from './components/PDSDashboard';
@@ -10,6 +11,8 @@ import UserProfiles from './components/UserProfiles';
 import ProjectHub from './components/ProjectHub';
 import SignInPage from './pages/SignInPage.jsx';
 import SignupCallback from './pages/SignupCallback.jsx';
+import Profile from './pages/Profile.jsx';
+import LoginOnly from './pages/LoginOnly.jsx';
 import { fetchPages } from './pages/pagesFetcher';
 import RequireAuth from './components/RequireAuth';
 
@@ -49,7 +52,8 @@ function App() {
       domain={import.meta.env.VITE_AUTH0_DOMAIN || 'dev-p36zmbszrbav7f8k.us.auth0.com'}
       clientId={import.meta.env.VITE_AUTH0_CLIENT_ID || 'rZbvqQgg5xfqE4WLmkvORg4okeO8ZKkw'}
       authorizationParams={{
-        redirect_uri: import.meta.env.VITE_AUTH0_REDIRECT_URI || (window.location.origin + '/signin')
+        redirect_uri: import.meta.env.VITE_AUTH0_REDIRECT_URI || (window.location.origin),
+        scope: 'openid profile email'
       }}
       onRedirectCallback={(appState) => {
         try {
@@ -65,7 +69,19 @@ function App() {
       }}
     >
       <BrowserRouter>
-        <div className="App">
+        <InnerApp pages={pages} loading={loading} routeMapping={routeMapping} />
+      </BrowserRouter>
+    </Auth0Provider>
+  );
+}
+
+function InnerApp({ pages, loading, routeMapping }) {
+  const { isAuthenticated } = useAuth0();
+
+  return (
+    <div className="App">
+      {isAuthenticated && (
+        <>
           <header className="app-header">
             <h1>Techbit</h1>
             <p>AI-Powered Tech Discovery & Collaboration Platform</p>
@@ -78,7 +94,6 @@ function App() {
                 <div>Loading...</div>
               ) : (
                 <Routes>
-                  {/* pages fetched from API (or fallback) will determine routes */}
                   {pages.map((p) => (
                     <Route
                       key={p.id}
@@ -91,21 +106,21 @@ function App() {
                     />
                   ))}
 
-                  {/* Sign-in route */}
-                  <Route path="/signin" element={<SignInPage />} />
-
-                  {/* signup callback - finalize local signup */}
-                  <Route path="/signup-callback" element={<SignupCallback />} />
-
-                  {/* default redirect goes to signin so users sign in first */}
-                  <Route path="/" element={<Navigate to="/signin" replace />} />
+                  <Route path="/profile" element={<Profile />} />
                 </Routes>
               )}
             </main>
           </div>
-        </div>
-      </BrowserRouter>
-    </Auth0Provider>
+        </>
+      )}
+
+      <Routes>
+        <Route path="/signup-callback" element={<SignupCallback />} />
+        <Route path="/signin" element={<SignInPage />} />
+        <Route path="/login" element={<LoginOnly />} />
+        <Route path="/" element={isAuthenticated ? <Navigate to="/feed" replace /> : <Navigate to="/signin" replace />} />
+      </Routes>
+    </div>
   );
 }
 

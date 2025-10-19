@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth0 } from '@auth0/auth0-react';
 
 const Controls = () => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { isAuthenticated, loginWithRedirect, logout } = useAuth0();
   const views = [
     { id: 'feed', label: 'Feed', path: '/feed', icon: '📱' },
     { id: 'graph', label: 'Knowledge Graph', path: '/graph', icon: '🕸️' },
@@ -12,6 +14,11 @@ const Controls = () => {
     { id: 'users', label: 'Users', path: '/users', icon: '👥' },
     { id: 'projectHub', label: 'Project Hub', path: '/project-hub', icon: '💬' },
   ];
+
+  // optionally add profile link
+  if (isAuthenticated) {
+    views.push({ id: 'profile', label: 'Profile', path: '/profile', icon: '👤' });
+  }
 
   return (
     <>
@@ -27,6 +34,13 @@ const Controls = () => {
       <div className={`controls-container ${mobileOpen ? 'open' : ''}`}>
         <div className="controls-header">
           <h3>Navigation</h3>
+          <div style={{ marginTop: 8 }}>
+            {!isAuthenticated ? (
+              <button onClick={() => loginWithRedirect()} className="view-btn">Login</button>
+            ) : (
+              <button onClick={() => logout({ returnTo: window.location.origin })} className="view-btn">Logout</button>
+            )}
+          </div>
         </div>
         <div className="view-buttons">
           {views.map((view) => (

@@ -31,7 +31,9 @@
     "mongoose": "^8.19.1",
     "neo4j-driver": "^5.0.0",
     "node-fetch": "^3.3.2",
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "jsonwebtoken": "^9.0.0",
+    "jwks-rsa": "^3.0.1"
   },
   "devDependencies": {
     "jest": "^29.0.0"

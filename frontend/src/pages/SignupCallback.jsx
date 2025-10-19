@@ -3,7 +3,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { useNavigate } from 'react-router-dom';
 
 const SignupCallback = () => {
-    const { user, isAuthenticated, isLoading } = useAuth0();
+    const { user, isAuthenticated, isLoading, getIdTokenClaims } = useAuth0();
     const navigate = useNavigate();
     const [error, setError] = useState(null);
 
@@ -15,9 +15,10 @@ const SignupCallback = () => {
                 // Optionally get access token for calling protected backend endpoints
                 // const token = await getAccessTokenSilently();
 
+                const idToken = (await getIdTokenClaims())?.__raw;
                 await fetch(`${import.meta.env.VITE_API_BASE || 'http://localhost:3002'}/auth/signup`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
                     body: JSON.stringify({ profile: user })
                 });
 
@@ -31,7 +32,7 @@ const SignupCallback = () => {
         })();
 
         return () => { mounted = false; };
-    }, [isAuthenticated, user, navigate]);
+    }, [isAuthenticated, user, navigate, getIdTokenClaims]);
 
     if (isLoading) return <div className="loading">Finalizing signup...</div>;
     if (error) return <div className="error">{error}</div>;

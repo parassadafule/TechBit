@@ -1,5 +1,4 @@
 import express from 'express';
-// import { AtpAgent } from '@atproto/api'; // Placeholder: ATProto API not available
 import { createFeedGenerator } from './feedGenerator/generator.js';
 import { startPDS, getPDSStatus, getPeerList, getStorageInfo, syncData, publishContent } from './pds/server.js';
 import { initGraph, addNode, connectNodes, findRelatedNodes } from './graph/builder.js';
@@ -12,7 +11,7 @@ import { mockPosts, mockUsers } from './mockData.js';
 import db from './db.js';
 
 import dotenv from 'dotenv';
-dotenv.config(); // Load environment variables
+dotenv.config();
 
 import jwt from 'jsonwebtoken';
 import jwksRsa from 'jwks-rsa';
@@ -54,12 +53,11 @@ async function verifyAuth0Token(req, res, next) {
 const app = express();
 const port = process.env.PORT || 3002;
 
-// Middleware
 app.use(express.json());
 
-// CORS Middleware - Allow requests from frontend
+
 app.use((req, res, next) => {
-  // Allow requests from any origin (for development)
+
   res.header('Access-Control-Allow-Origin', '*');
 
   // Allow specific headers
@@ -76,7 +74,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Basic route with comprehensive API documentation
 app.get('/', (req, res) => {
   res.json({
     message: 'Welcome to Techbit Backend API',
@@ -133,7 +130,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// Feed endpoints
 app.get('/feed', async (req, res) => {
   try {
     const { limit, offset, sortBy, filterTags } = req.query;

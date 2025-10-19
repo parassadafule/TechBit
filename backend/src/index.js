@@ -13,6 +13,42 @@ import db from './db.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
+import jwt from 'jsonwebtoken';
+import jwksRsa from 'jwks-rsa';
+
+// Simple verification middleware using JWKS from Auth0
+const auth0Domain = process.env.AUTH0_DOMAIN || 'dev-p36zmbszrbav7f8k.us.auth0.com';
+const jwksClient = jwksRsa({
+  jwksUri: `https://${auth0Domain}/.well-known/jwks.json`
+});
+
+function getKey(header, callback) {
+  jwksClient.getSigningKey(header.kid, function (err, key) {
+    if (err) return callback(err);
+    const signingKey = key.getPublicKey();
+    callback(null, signingKey);
+  });
+}
+
+async function verifyAuth0Token(req, res, next) {
+  const auth = req.headers.authorization || '';
+  if (!auth.startsWith('Bearer ')) return res.status(401).json({ error: 'Missing bearer token' });
+  const token = auth.split(' ')[1];
+  try {
+    const decoded = await new Promise((resolve, reject) => {
+      jwt.verify(token, getKey, { algorithms: ['RS256'], issuer: `https://${auth0Domain}/` }, (err, decoded) => {
+        if (err) return reject(err);
+        resolve(decoded);
+      });
+    });
+    req.auth0 = decoded;
+    next();
+  } catch (err) {
+    console.error('Token verification failed', err);
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+}
+
 
 const app = express();
 const port = process.env.PORT || 3002;
@@ -24,13 +60,13 @@ app.use((req, res, next) => {
 
   res.header('Access-Control-Allow-Origin', '*');
 
-
+  // Allow specific headers
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
 
-
+  // Allow specific HTTP methods
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
 
-
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return res.status(200).json({});
   }
@@ -390,6 +426,64 @@ app.post('/rag/retrieve', async (req, res) => {
       return res.json(result);
     }
     return res.json({ documents: [], summary: null, note: 'RAG service unavailable' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Auth routes: receives profile from frontend after Auth0 login and creates/updates DB user
+import { createOrUpdateUserFromAuth0, findUserByAuth0Id, createLocalUser, findUserByEmail } from './userService.js';
+
+app.post('/auth/signup', verifyAuth0Token, async (req, res) => {
+  try {
+    // req.auth0 will contain the decoded id token claims
+    const profile = req.auth0 || req.body?.profile;
+    if (!profile || !profile.sub) return res.status(400).json({ error: 'profile with sub is required' });
+    const user = await createOrUpdateUserFromAuth0(profile);
+    res.json({ user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/auth/me', verifyAuth0Token, async (req, res) => {
+  try {
+    const auth0Id = req.auth0?.sub || req.query.auth0Id || req.headers['x-auth0-id'];
+    if (!auth0Id) return res.status(400).json({ error: 'auth0Id required' });
+    const user = await findUserByAuth0Id(auth0Id);
+    if (!user) return res.status(404).json({ error: 'user not found' });
+    res.json({ user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Register a local user (email/password handled externally or omitted for MVP)
+app.post('/auth/register', async (req, res) => {
+  try {
+    const { email, name, picture, bio } = req.body || {};
+    if (!email) return res.status(400).json({ error: 'email is required' });
+
+    // If a user exists with this email, return it; otherwise create a new local user
+    const user = await createLocalUser({ email, name, picture, bio });
+    res.status(201).json({ user });
+  } catch (err) {
+    // Handle duplicate key errors gracefully
+    if (err.code === 11000) {
+      return res.status(409).json({ error: 'User with this email already exists' });
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Lookup user by email (helpful after a local registration or sign-in)
+app.get('/auth/user', async (req, res) => {
+  try {
+    const { email } = req.query || {};
+    if (!email) return res.status(400).json({ error: 'email is required' });
+    const user = await findUserByEmail(email);
+    if (!user) return res.status(404).json({ error: 'user not found' });
+    res.json({ user });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

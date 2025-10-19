@@ -55,6 +55,19 @@ export async function createLocalUser({ email, name, picture, bio }) {
     return user.toObject();
 }
 
+export async function updateUserByAuth0Id(auth0Id, updates = {}) {
+    if (!auth0Id) throw new Error('auth0Id required');
+    const user = await User.findOne({ auth0Id });
+    if (!user) throw new Error('user not found');
+    const allowed = ['name', 'bio', 'picture', 'email'];
+    for (const k of Object.keys(updates)) {
+        if (allowed.includes(k)) user[k] = updates[k];
+    }
+    user.profileComplete = user.profileComplete || !!(user.email && user.name);
+    await user.save();
+    return user.toObject();
+}
+
 export async function listUsers(limit = 50) {
     return User.find().limit(limit).lean();
 }

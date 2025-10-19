@@ -1,0 +1,68 @@
+/* Profile.css - simple profile card */
+:root {
+    --brand: #0b5cff;
+    --muted: #667085;
+    --card: #fff;
+}
+
+.profile-page {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    align-items: center;
+}
+
+.profile-card {
+    width: 100%;
+    max-width: 760px;
+    background: var(--card);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 8px 30px rgba(11, 92, 255, 0.06);
+    border: 1px solid rgba(11, 92, 255, 0.04);
+}
+
+.profile-info {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 12px;
+    object-fit: cover;
+    box-shadow: 0 6px 18px rgba(11, 92, 255, 0.08);
+}
+
+.profile-details h3 {
+    margin: 0;
+}
+
+.profile-details p {
+    margin: 0;
+    color: var(--muted);
+}
+
+.profile-db {
+    margin-top: 1rem;
+}
+
+.profile-logout {
+    margin-top: 1rem;
+    padding: 0.6rem 1rem;
+    background: var(--brand);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+@media (max-width:600px) {
+    .profile-info {
+        flex-direction: column;
+        align-items: center;
+    }
+}

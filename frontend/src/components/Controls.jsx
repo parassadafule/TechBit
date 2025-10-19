@@ -38,7 +38,15 @@ const Controls = () => {
             {!isAuthenticated ? (
               <button onClick={() => loginWithRedirect()} className="view-btn">Login</button>
             ) : (
-              <button onClick={() => logout({ returnTo: window.location.origin })} className="view-btn">Logout</button>
+              <button
+                onClick={() => {
+                  (() => {
+                    try { localStorage.setItem('techbit_logged_out', '1'); } catch { /* ignore */ }
+                  })();
+                  logout({ returnTo: window.location.origin + '/logged-out' });
+                }}
+                className="view-btn"
+              >Logout</button>
             )}
           </div>
         </div>

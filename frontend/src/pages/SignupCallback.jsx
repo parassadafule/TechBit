@@ -22,6 +22,9 @@ const SignupCallback = () => {
                     body: JSON.stringify({ profile: user })
                 });
 
+                // Clear any logged-out flag so RequireAuth won't force /logged-out
+                try { localStorage.removeItem('techbit_logged_out'); } catch { /* ignore */ }
+
                 if (mounted) {
                     navigate('/feed');
                 }

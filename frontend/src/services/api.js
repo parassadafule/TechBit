@@ -35,6 +35,7 @@ export const feedAPI = {
   getAuthorPosts: (author) => apiCall(`/feed/author/${author}`),
 
   getTrending: () => apiCall('/feed/trending'),
+  createPost: (post) => apiCall('/posts', { method: 'POST', body: JSON.stringify(post) }),
 };
 
 // PDS Endpoints
@@ -117,4 +118,5 @@ export const userAPI = {
   getUsers: () => apiCall('/users'),
 
   getUser: (username) => apiCall(`/users/${username}`),
+  follow: (targetUserId) => apiCall('/follow', { method: 'POST', body: JSON.stringify({ targetUserId }) }),
 };

@@ -1,6 +1,7 @@
 import express from 'express';
 // import { AtpAgent } from '@atproto/api'; // Placeholder: ATProto API not available
 import { createFeedGenerator } from './feedGenerator/generator.js';
+import { createPost, listPosts, toggleFollow } from './postService.js';
 import { startPDS, getPDSStatus, getPeerList, getStorageInfo, syncData, publishContent } from './pds/server.js';
 import { initGraph, addNode, connectNodes, findRelatedNodes } from './graph/builder.js';
 import { queryGraph, queryKnowledgeGaps, queryNodeConnections, findPathBetweenNodes, graphQLStub } from './graph/query.js';
@@ -144,9 +145,9 @@ app.get('/feed', async (req, res) => {
       filterTags: filterTags ? filterTags.split(',') : []
     };
 
-    const feedGenerator = createFeedGenerator(null);
-    const result = await feedGenerator.getFeed(params);
-    res.json(result);
+    // Return posts from DB
+    const posts = await listPosts({ limit: params.limit, offset: params.offset });
+    res.json({ feed: posts });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -172,11 +173,46 @@ app.get('/feed/author/:author', async (req, res) => {
   }
 });
 
+// Create a post (authenticated)
+app.post('/posts', verifyAuth0Token, async (req, res) => {
+  try {
+    const auth0Id = req.auth0?.sub;
+    if (!auth0Id) return res.status(400).json({ error: 'auth0Id required' });
+    const { text, media, mediaType, tags } = req.body || {};
+    // find the user record
+    const user = await findUserByAuth0Id(auth0Id);
+    if (!user) return res.status(404).json({ error: 'user not found' });
+    const p = await createPost({ authorId: user._id || user.id, text, media, mediaType, tags });
+    res.status(201).json({ post: p });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Follow/unfollow a user (authenticated) - body: { targetUserId }
+app.post('/follow', verifyAuth0Token, async (req, res) => {
+  try {
+    const auth0Id = req.auth0?.sub;
+    if (!auth0Id) return res.status(400).json({ error: 'auth0Id required' });
+    const user = await findUserByAuth0Id(auth0Id);
+    if (!user) return res.status(404).json({ error: 'user not found' });
+    const { targetUserId } = req.body || {};
+    if (!targetUserId) return res.status(400).json({ error: 'targetUserId required' });
+    const result = await toggleFollow(user._id || user.id, targetUserId);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/feed/trending', async (req, res) => {
   try {
-    const feedGenerator = createFeedGenerator(null);
-    const result = await feedGenerator.getTrendingTags();
-    res.json(result);
+    // simple trending calculation from posts tags (aggregate top tags)
+    const posts = await listPosts({ limit: 200 });
+    const counts = {};
+    posts.forEach(p => (p.tags || []).forEach(t => counts[t] = (counts[t] || 0) + 1));
+    const trending = Object.keys(counts).map(tag => ({ tag, count: counts[tag] })).sort((a, b) => b.count - a.count);
+    res.json({ trending });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -436,7 +472,7 @@ app.post('/rag/retrieve', async (req, res) => {
 });
 
 // Auth routes: receives profile from frontend after Auth0 login and creates/updates DB user
-import { createOrUpdateUserFromAuth0, findUserByAuth0Id, createLocalUser, findUserByEmail } from './userService.js';
+import { createOrUpdateUserFromAuth0, findUserByAuth0Id, createLocalUser, findUserByEmail, updateUserByAuth0Id } from './userService.js';
 
 app.post('/auth/signup', verifyAuth0Token, async (req, res) => {
   try {
@@ -456,6 +492,19 @@ app.get('/auth/me', verifyAuth0Token, async (req, res) => {
     if (!auth0Id) return res.status(400).json({ error: 'auth0Id required' });
     const user = await findUserByAuth0Id(auth0Id);
     if (!user) return res.status(404).json({ error: 'user not found' });
+    res.json({ user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update profile (name, bio, picture) for authenticated user
+app.put('/auth/profile', verifyAuth0Token, async (req, res) => {
+  try {
+    const auth0Id = req.auth0?.sub;
+    if (!auth0Id) return res.status(400).json({ error: 'auth0Id required' });
+    const { name, bio, picture } = req.body || {};
+    const user = await updateUserByAuth0Id(auth0Id, { name, bio, picture });
     res.json({ user });
   } catch (err) {
     res.status(500).json({ error: err.message });

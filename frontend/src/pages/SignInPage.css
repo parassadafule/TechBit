@@ -1,0 +1,81 @@
+/* SignInPage.css - simple, clean, responsive sign-in page */
+:root {
+    --brand: #0b5cff;
+    --accent: #07c;
+    --muted: #666;
+    --bg: #f6f8fb;
+    --card: #ffffff;
+    --radius: 12px;
+}
+
+.signin-page {
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: linear-gradient(180deg, var(--bg), #eef3ff);
+}
+
+.signin-card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 30px rgba(11, 92, 255, 0.08);
+    padding: 2rem;
+    text-align: center;
+    border: 1px solid rgba(11, 92, 255, 0.06);
+}
+
+.signin-card h2 {
+    margin: 0 0 0.5rem 0;
+    color: #0b254e;
+    font-size: 1.4rem;
+}
+
+.signin-card p {
+    margin: 0 0 1.25rem 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+}
+
+.signin-btn {
+    display: inline-block;
+    width: 100%;
+    padding: 0.85rem 1rem;
+    background: linear-gradient(90deg, var(--brand), var(--accent));
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .12s ease, box-shadow .12s ease;
+    box-shadow: 0 6px 18px rgba(11, 92, 255, 0.18);
+}
+
+.signin-btn:active {
+    transform: translateY(1px);
+}
+
+.signin-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.error {
+    color: #b00020;
+    margin: 0.5rem 0;
+}
+
+@media (max-width:480px) {
+    .signin-card {
+        padding: 1.25rem;
+        border-radius: 10px;
+    }
+
+    .signin-card h2 {
+        font-size: 1.2rem;
+    }
+}

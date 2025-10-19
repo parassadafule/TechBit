@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { feedAPI } from '../services/api';
+import PostCreator from './Post';
 
 const Feed = () => {
   const [posts, setPosts] = useState([]);
@@ -13,12 +14,7 @@ const Feed = () => {
   });
   const [trendingTags, setTrendingTags] = useState([]);
 
-  useEffect(() => {
-    loadFeed();
-    loadTrendingTags();
-  }, [filters]);
-
-  const loadFeed = async () => {
+  const loadFeed = useCallback(async () => {
     try {
       setLoading(true);
       const params = {
@@ -34,7 +30,7 @@ const Feed = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
   const loadTrendingTags = async () => {
     try {
@@ -44,6 +40,12 @@ const Feed = () => {
       console.error('Trending tags load error:', err);
     }
   };
+
+  useEffect(() => {
+    // loadFeed and loadTrendingTags were hoisted above to avoid TDZ errors
+    loadFeed();
+    loadTrendingTags();
+  }, [filters, loadFeed]);
 
   const handleFilterChange = (newFilters) => {
     setFilters(prev => ({ ...prev, ...newFilters, offset: 0 }));
@@ -58,6 +60,7 @@ const Feed = () => {
   };
 
   const formatTimestamp = (timestamp) => {
+    if (!timestamp) return '';
     return new Date(timestamp).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -66,6 +69,7 @@ const Feed = () => {
       minute: '2-digit',
     });
   };
+
 
   if (loading && posts.length === 0) {
     return (
@@ -77,6 +81,7 @@ const Feed = () => {
 
   return (
     <div className="feed-container">
+      <PostCreator onPosted={() => loadFeed()} />
       <div className="feed-header">
         <h2>Tech Feed</h2>
         <div className="feed-controls">
@@ -119,29 +124,29 @@ const Feed = () => {
       {error && <div className="error">{error}</div>}
 
       <div className="posts">
-        {posts.map((item) => (
-          <div key={item.post.id} className="post-card">
+        {posts.map((post) => (
+          <div key={post.id || post._id} className="post-card">
             <div className="post-header">
               <div className="author-info">
-                <span className="author">{item.post.author}</span>
-                <span className="timestamp">{formatTimestamp(item.post.timestamp)}</span>
-              </div>
-              <div className="post-score">
-                <span className="score">Score: {item.score.toFixed(2)}</span>
-                <div className="score-breakdown">
-                  <span>Novelty: {item.scores.novelty}</span>
-                  <span>Impact: {item.scores.impact}</span>
-                </div>
+                <span className="author">{post.author?.name || post.author?.email || 'Unknown'}</span>
+                <span className="timestamp">{formatTimestamp(post.createdAt || post.timestamp)}</span>
               </div>
             </div>
 
             <div className="post-content">
-              <p>{item.post.text}</p>
+              <p>{post.text}</p>
+              {post.media && post.media.length > 0 && (
+                <div className="post-media">
+                  {post.media.map((m, i) => (
+                    <img key={i} src={m} alt={`media-${i}`} style={{ maxWidth: '100%', marginTop: 8 }} />
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="post-meta">
               <div className="tags">
-                {item.post.tags.map((tag, index) => (
+                {(post.tags || []).map((tag, index) => (
                   <span key={index} className="tag" onClick={() => handleTagClick(tag)}>
                     #{tag}
                   </span>
@@ -149,18 +154,10 @@ const Feed = () => {
               </div>
 
               <div className="engagement">
-                <span>❤️ {item.post.likes}</span>
-                <span>💬 {item.post.comments}</span>
-                <span>🔄 {item.post.shares}</span>
+                <span>❤️ {post.likes ?? 0}</span>
+                <span>💬 {post.comments ?? 0}</span>
+                <span>🔄 {post.shares ?? 0}</span>
               </div>
-
-              {item.post.repo && (
-                <div className="repo-link">
-                  <a href={`https://github.com/${item.post.repo}`} target="_blank" rel="noopener noreferrer">
-                    📁 {item.post.repo}
-                  </a>
-                </div>
-              )}
             </div>
           </div>
         ))}

@@ -13,6 +13,7 @@ import SignInPage from './pages/SignInPage.jsx';
 import SignupCallback from './pages/SignupCallback.jsx';
 import Profile from './pages/Profile.jsx';
 import LoginOnly from './pages/LoginOnly.jsx';
+import PostPage from './pages/PostPage.jsx';
 import { fetchPages } from './pages/pagesFetcher';
 import RequireAuth from './components/RequireAuth';
 
@@ -105,6 +106,8 @@ function InnerApp({ pages, loading, routeMapping }) {
                       }
                     />
                   ))}
+
+                  <Route path="/post" element={<PostPage />} />
 
                   <Route path="/profile" element={<Profile />} />
                 </Routes>

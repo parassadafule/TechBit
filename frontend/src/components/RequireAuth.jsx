@@ -2,6 +2,10 @@ import React from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Navigate, useLocation } from 'react-router-dom';
 
+function safeGetLS(key) {
+    try { return localStorage.getItem(key); } catch { return null; }
+}
+
 const RequireAuth = ({ children }) => {
     const { isAuthenticated, isLoading } = useAuth0();
     const location = useLocation();
@@ -9,6 +13,10 @@ const RequireAuth = ({ children }) => {
     if (isLoading) return <div className="loading">Checking authentication...</div>;
 
     if (!isAuthenticated) {
+        // If user explicitly logged out, send to a logged-out page (404-like)
+        const flagged = safeGetLS('techbit_logged_out');
+        if (flagged) return <Navigate to="/logged-out" replace />;
+
         // Redirect to signin and preserve where the user wanted to go
         return <Navigate to="/signin" state={{ from: location.pathname }} replace />;
     }

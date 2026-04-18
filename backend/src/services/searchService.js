@@ -43,7 +43,7 @@ async function findSimilarPostsByEmbedding(embedding = [], options = {}) {
     embedding: { $exists: true, $ne: [] },
     ...(excludePostId ? { _id: { $ne: excludePostId } } : {}),
   })
-    .select('userId title content summary tldr tags type createdAt embedding')
+    .select('userId title content tldr tags type createdAt embedding')
     .select('+embedding')
     .lean();
 
@@ -89,7 +89,7 @@ async function semanticSearch(query, options = {}) {
   }
 
   return Post.find({ $text: { $search: normalizedQuery } })
-    .select('userId title content summary tldr tags type createdAt')
+    .select('userId title content tldr tags type createdAt')
     .select({ score: { $meta: 'textScore' } })
     .sort({ score: { $meta: 'textScore' } })
     .limit(limit)

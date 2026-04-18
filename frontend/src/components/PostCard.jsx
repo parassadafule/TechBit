@@ -13,6 +13,34 @@ import { formatTimeAgo } from '../utils/date';
 import { extractDomain, getPostTypeColor, getPostTypeIcon } from '../utils/helpers';
 import { useAuth } from '../contexts/AuthContext';
 
+const normalizeGeneratedMarkdown = (text = '', { isTldr = false } = {}) => {
+  const value = String(text || '').trim();
+  if (!value) return '';
+
+  let normalized = value
+    .replace(/\r/g, '')
+    .replace(/📋\s*Overview/gi, '### Overview')
+    .replace(/🔑\s*Key\s*Takeaways/gi, '### Key Takeaways')
+    .replace(/🛠\s*Practical\s*Application/gi, '### Practical Application')
+    .replace(/💡\s*Why\s*It\s*Matters/gi, '### Why It Matters')
+    .replace(/📚\s*Next\s*Steps/gi, '### Next Steps')
+    .replace(/^Overview\s*$/gim, '### Overview')
+    .replace(/^Key\s*Takeaways\s*$/gim, '### Key Takeaways')
+    .replace(/^Practical\s*Application\s*$/gim, '### Practical Application')
+    .replace(/^Why\s*It\s*Matters\s*$/gim, '### Why It Matters')
+    .replace(/^Next\s*Steps\s*$/gim, '### Next Steps')
+    .replace(/(^|\n)•\s+/g, '$1- ')
+    .replace(/\n{3,}/g, '\n\n');
+
+  if (isTldr) {
+    normalized = normalized
+      .replace(/\s+-\s+/g, '\n- ')
+      .replace(/\n{2,}/g, '\n');
+  }
+
+  return normalized.trim();
+};
+
 const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
   const { user, setUser, checkAuth } = useAuth();
   const [isLiked, setIsLiked] = useState(post?.likedByUser || false);
@@ -79,6 +107,9 @@ const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
       queryClient.invalidateQueries(['bookmarks']);
     },
   });
+
+  const formattedContent = normalizeGeneratedMarkdown(post.content);
+  const formattedTldr = normalizeGeneratedMarkdown(post.tldr, { isTldr: true });
 
   return (
     <Card className="p-6 hover:shadow-md transition-shadow">
@@ -160,10 +191,18 @@ const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
               },
             }}
           >
-            {post.content}
+            {formattedContent}
           </ReactMarkdown>
         ) : (
-          <p className="text-gray-700 ">{post.tldr}</p>
+          <ReactMarkdown
+            components={{
+              p: ({ children }) => <p className="text-gray-700 mb-2">{children}</p>,
+              ul: ({ children }) => <ul className="list-disc pl-5 text-gray-700 space-y-1">{children}</ul>,
+              li: ({ children }) => <li>{children}</li>,
+            }}
+          >
+            {formattedTldr}
+          </ReactMarkdown>
         )}
       </div>
 

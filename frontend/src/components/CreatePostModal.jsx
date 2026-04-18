@@ -15,7 +15,6 @@ const CreatePostModal = ({ isOpen, onClose, initialType = 'blog' }) => {
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    summary: '',
     tags: '',
     type: initialType,
     sourceUrl: '',
@@ -51,7 +50,6 @@ const CreatePostModal = ({ isOpen, onClose, initialType = 'blog' }) => {
     setFormData({
       title: '',
       content: '',
-      summary: '',
       tags: '',
       type: initialType,
       sourceUrl: '',
@@ -172,15 +170,6 @@ const CreatePostModal = ({ isOpen, onClose, initialType = 'blog' }) => {
             required
           />
 
-          <TextArea
-            label="Optional custom summary"
-            placeholder="Leave blank to let AI generate the TLDR automatically while creating the post"
-            value={formData.summary}
-            onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-            disabled={isSubmitting}
-            rows={3}
-          />
-
           <Input
             label="Tags (comma-separated)"
             placeholder="react, javascript, web-dev"
@@ -246,7 +235,7 @@ const CreatePostModal = ({ isOpen, onClose, initialType = 'blog' }) => {
                   Fetching and processing content with AI...
                 </span>
               ) : (
-                'We\'ll automatically fetch the content and generate a summary using AI.'
+                'We\'ll automatically fetch the content and generate a TLDR using AI.'
               )}
             </p>
           </div>

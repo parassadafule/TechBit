@@ -17,11 +17,6 @@ const postSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    summary: {
-      type: String,
-      trim: true,
-      maxlength: 500,
-    },
     tldr: {
       type: String,
       trim: true,
@@ -66,7 +61,7 @@ const postSchema = new mongoose.Schema(
   }
 );
 
-postSchema.index({ title: 'text', content: 'text', summary: 'text' }); // Full-text search
+postSchema.index({ title: 'text', content: 'text', tldr: 'text' }); // Full-text search
 postSchema.index({ tags: 1 }); // Multikey index for tag filtering
 postSchema.index({ type: 1, createdAt: -1 }); // Compound for feed queries
 postSchema.index({ userId: 1, createdAt: -1 }); // User posts with date sorting

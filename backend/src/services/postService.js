@@ -2,6 +2,7 @@ const Post = require('../models/Post');
 const ragService = require('./ragService');
 const { generateTLDR, buildFallbackTLDR } = require('./tldrService');
 const { getEmbedding, DEFAULT_EMBEDDING_INPUT_LIMIT } = require('../utils/embedding');
+const { scrapeUrlMetadata, buildFallbackPostContent } = require('./scrapperService');
 const logger = require('../utils/logger');
 
 const TIMEOUTS = {
@@ -57,7 +58,7 @@ function validatePostInput({ title, content, type }) {
 function queuePostIndexing({ postId, title, content, url }) {
   setImmediate(async () => {
     try {
-      logger.debug('Starting background post indexing', { postId });
+    //   logger.debug('Starting background post indexing', { postId });
       const docs = await ragService.chunkAndEmbed(content, {
         postId,
         url,
@@ -275,6 +276,8 @@ function generateTitleFromUrl(url, type = 'blog') {
 
 
 async function generateContentFromUrl(url, type, title = '') {
+  const scraped = await scrapeUrlMetadata(url, type);
+
   const typeHints = {
     blog: 'Focus on concepts, explanations, best practices and technical insights',
     repo: 'Focus on features, capabilities, API, use cases, and implementation details',
@@ -282,51 +285,66 @@ async function generateContentFromUrl(url, type, title = '') {
     podcast: 'Focus on discussion topics, speaker insights, actionable advice, and takeaways',
   };
 
-  const typeHint = typeHints[type] || 'Focus on comprehensive technical information';
-  const fallbackTitle = title || generateTitleFromUrl(url, type);
+  const effectiveType = scraped.type || type;
+  const typeHint = typeHints[effectiveType] || 'Focus on comprehensive technical information';
+  const fallbackTitle = title || scraped.title || generateTitleFromUrl(url, effectiveType);
+
+  const groundingContext = [
+    `Scraped title: ${scraped.title || 'N/A'}`,
+    `Scraped description: ${scraped.description || 'N/A'}`,
+    `Author/creator: ${scraped.author || 'N/A'}`,
+    `Site/platform: ${scraped.siteName || scraped.platform || 'N/A'}`,
+    `Headings: ${(scraped.headings || []).join(' | ') || 'N/A'}`,
+    `Tags: ${(scraped.tags || []).join(', ') || 'N/A'}`,
+    `Extracted content: ${(scraped.extractedText || '').slice(0, 9000) || 'N/A'}`,
+  ].join('\n');
 
   const prompt = `You are an expert developer content creator for a modern tech social platform (like Dev.to, Hacker News, or LinkedIn for developers).
 
 Your task: Generate a HIGH-QUALITY developer post based on the URL provided. The post should be structured, practical, and immediately valuable to developers.
 
-## INPUT
-- **URL:** ${url}
-- **Type:** ${type}
-- **Focus:** ${typeHint}
+INPUT
+- URL: ${url}
+- Type: ${effectiveType}
+- Focus: ${typeHint}
 
-## OUTPUT FORMAT
+SCRAPED GROUNDING DATA (USE THIS AS SOURCE OF TRUTH)
+${groundingContext}
+
+OUTPUT FORMAT
 
 Generate the post in this exact markdown structure:
 
-### 📋 Overview
+📋 Overview
 (2-3 sentences explaining what this resource is and why it matters to developers)
 
-### 🔑 Key Takeaways
+🔑 Key Takeaways
 - Point 1: Specific insight or feature
 - Point 2: Specific insight or feature
 - Point 3: Specific insight or feature
 - Point 4: Specific insight or feature
 
-### 🛠 Practical Application
+🛠 Practical Application
 (Explain how developers can use this concept, tool, or knowledge in their projects. Be specific with examples or use cases)
 
-### 💡 Why It Matters
+💡 Why It Matters
 (Explain the broader impact or value proposition for the developer community)
 
-### 📚 Next Steps
+📚 Next Steps
 - Resource 1 to explore
 - Resource 2 to explore
 - Resource 3 to explore
 
-## RULES
+RULES
 1. DO NOT say "I accessed this URL" or "According to this page"
 2. DO NOT hallucinate specific code or technical claims
 3. If unsure about details, use phrases like "likely covers" or "typically includes"
 4. Keep content PRACTICAL and SPECIFIC, not generic
-5. Target audience: senior developers, team leads, architects
+5. Target audience: senior developers, team leads, architects, developers community
 6. Total length: 400-600 words
-7. Use markdown formatting with clear sections
+7. Use markdown formatting with clear sections where appropriate
 8. Be concise and scannable (use bullet points)
+9. Use scraped data first. Never add facts not implied by scraped data.
 
 Generate the post now:`;
 
@@ -335,7 +353,7 @@ Generate the post now:`;
     const generated = await ragService.llm.call(prompt);
     const content = (generated || '').trim();
 
-    if (content.length > 300 && (content.includes('##') || content.includes('###'))) {
+    if (content.length > 0 ) {
       logger.debug('Content generated from URL successfully', { length: content.length });
       return {
         title: fallbackTitle,
@@ -350,28 +368,10 @@ Generate the post now:`;
   }
 
   logger.debug('Using fallback content structure for URL post');
-  const fallbackContent = `## ${fallbackTitle}
-
-### 📋 Overview
-This resource provides developer-focused information on relevant topics and technologies.
-
-### 🔑 Key Takeaways
-- Covers important concepts and best practices
-- Includes practical examples and real-world applications
-- Provides actionable guidance for developers
-- Offers insights into current industry trends
-
-### 🛠 Practical Application
-Review this resource to understand modern development practices and patterns that can enhance your projects and workflows.
-
-### 💡 Why It Matters
-Staying current with quality developer resources helps improve code quality, productivity, and technical decision-making.
-
-### 📚 Next Steps
-- Explore the resource thoroughly
-- Identify applicable concepts for your projects
-- Share insights with your development team
-- Implement learnings in an upcoming project`;
+  const fallbackContent = buildFallbackPostContent({
+    ...scraped,
+    title: fallbackTitle,
+  }, effectiveType);
 
   return {
     title: fallbackTitle,

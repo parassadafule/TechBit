@@ -4,6 +4,7 @@ const { validate, validationRules } = require('../middleware/validator');
 const {
   getProfile,
   updateProfile,
+  getUserPosts,
   getActivityHistory,
   addActivity,
   getSuggestedUsers,
@@ -16,6 +17,8 @@ const router = express.Router();
 router.use(ensureAuthenticated);
 
 router.get('/profile/:id?', getProfile);
+
+router.get('/:id/posts', getUserPosts);
 
 router.put('/profile', validationRules.updateProfile, validate, updateProfile);
 

@@ -29,7 +29,7 @@ class PlatformService {
     const posts = await Post.find(query)
       .sort({ createdAt: -1 })
       .limit(10)
-      .select('title summary blogUrl type tags createdAt');
+      .select('title tldr blogUrl type tags createdAt');
 
     const spotlight = trends.slice(0, 3).map((trend) => ({
       title: trend.topic,
@@ -41,7 +41,7 @@ class PlatformService {
     const quickReads = posts.slice(0, 5).map((post) => ({
       id: post._id,
       title: post.title,
-      summary: post.summary || 'Short context card generated from your recent relevant resources.',
+      summary: post.tldr || 'Short context card generated from your recent relevant resources.',
       type: post.type,
       tags: post.tags || [],
       url: post.blogUrl || null,

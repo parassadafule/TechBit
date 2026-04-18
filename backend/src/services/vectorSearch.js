@@ -47,7 +47,7 @@ async function runAtlasVectorSearch(queryEmbedding, limit, numCandidates = DEFAU
         userId: 1,
         title: 1,
         content: 1,
-        summary: 1,
+        tldr: 1,
         blogUrl: 1,
         tags: 1,
         type: 1,

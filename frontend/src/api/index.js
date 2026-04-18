@@ -26,6 +26,13 @@ export const userAPI = {
     return response.data;
   },
 
+  getUserPosts: async (userId, page = 1, limit = 20) => {
+    const response = await api.get(`/users/${userId}/posts`, {
+      params: { page, limit },
+    });
+    return response.data;
+  },
+
   updateProfile: async (data) => {
     const response = await api.put('/users/profile', data);
     return response.data;

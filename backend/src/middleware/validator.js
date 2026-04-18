@@ -23,6 +23,28 @@ const sanitizeInput = (value) => {
 
 const validationRules = {
   updateProfile: [
+    body('bio')
+      .optional()
+      .isString()
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage('Bio too long')
+      .customSanitizer(sanitizeInput),
+    body('location')
+      .optional()
+      .isString()
+      .trim()
+      .isLength({ max: 100 })
+      .withMessage('Location too long')
+      .customSanitizer(sanitizeInput),
+    body('website')
+      .optional({ nullable: true })
+      .custom((value) => {
+        if (!value || !String(value).trim()) return true;
+        return /^https?:\/\//i.test(String(value).trim());
+      })
+      .withMessage('Website must be a valid URL starting with http:// or https://')
+      .customSanitizer(sanitizeInput),
     body('interests')
       .optional()
       .isArray()

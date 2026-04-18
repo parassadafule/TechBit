@@ -1,20 +1,31 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MapPin, Link as LinkIcon, Calendar, Edit } from 'lucide-react';
-import { userAPI, postAPI } from '../api';
+import { userAPI } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 import PostCard from '../components/PostCard';
 import Avatar from '../components/ui/Avatar';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Spinner from '../components/ui/Spinner';
+import Input from '../components/ui/Input';
+import TextArea from '../components/ui/TextArea';
 import { formatDate } from '../utils/date';
 
 const Profile = () => {
   const { userId } = useParams();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, setUser: setCurrentUser } = useAuth();
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState('posts');
+  const [isEditing, setIsEditing] = useState(false);
+  const [formState, setFormState] = useState({
+    bio: '',
+    location: '',
+    website: '',
+    interestsInput: '',
+  });
+
   const id = userId || currentUser?._id;
 
   const isOwnProfile = !userId || userId === currentUser?._id;
@@ -26,7 +37,7 @@ const Profile = () => {
 
   const { data: postsData, isLoading: postsLoading } = useQuery({
     queryKey: ['posts', 'user', id],
-    queryFn: () => postAPI.getFeed({ page: 1, limit: 20 }),
+    queryFn: () => userAPI.getUserPosts(id, 1, 20),
     enabled: tab === 'posts' && !!id,
   });
 
@@ -34,6 +45,17 @@ const Profile = () => {
     queryKey: ['activity', userId],
     queryFn: () => userAPI.getActivity(1, 20),
     enabled: tab === 'activity' && isOwnProfile,
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: (payload) => userAPI.updateProfile(payload),
+    onSuccess: (updatedUser) => {
+      queryClient.invalidateQueries(['profile', userId]);
+      if (isOwnProfile) {
+        setCurrentUser(updatedUser);
+      }
+      setIsEditing(false);
+    },
   });
 
   if (profileLoading) {
@@ -45,7 +67,33 @@ const Profile = () => {
   }
 
   const user = profile || currentUser;
-  const userPosts = (postsData?.posts || []).filter((post) => post?.userId?._id === id);
+  const userPosts = postsData?.posts || [];
+
+  const startEdit = () => {
+    setFormState({
+      bio: user?.bio || '',
+      location: user?.location || '',
+      website: user?.website || '',
+      interestsInput: Array.isArray(user?.interests) ? user.interests.join(', ') : '',
+    });
+    setIsEditing(true);
+  };
+
+  const submitProfileUpdate = (event) => {
+    event.preventDefault();
+
+    const interests = formState.interestsInput
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    updateProfileMutation.mutate({
+      bio: formState.bio,
+      location: formState.location,
+      website: formState.website,
+      interests,
+    });
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -62,7 +110,7 @@ const Profile = () => {
               </div>
               
               {isOwnProfile && (
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={startEdit}>
                   <Edit size={16} className="mr-2" />
                   Edit Profile
                 </Button>
@@ -86,7 +134,7 @@ const Profile = () => {
                   className="flex items-center space-x-1 text-primary-600 hover:underline"
                 >
                   <LinkIcon size={16} />
-                  <span>Website</span>
+                  <span>{user.website.includes('github.com') ? 'Git Profile' : 'Website'}</span>
                 </a>
               )}
               <div className="flex items-center space-x-1">
@@ -125,17 +173,50 @@ const Profile = () => {
               </div>
             )}
 
-            {isOwnProfile && (
-              <div className="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-100">
-                <h3 className="text-sm font-semibold text-blue-900 mb-1">Personalization Profile</h3>
-                <p className="text-sm text-blue-800">
-                  Skill level: {user?.goals?.skillLevel || 'intermediate'} • Career goal: {user?.goals?.career || 'full-stack-developer'}
-                </p>
-                <a href="/learning" className="text-sm text-primary-700 hover:underline mt-1 inline-block">
-                  Update your adaptive learning path
-                </a>
-              </div>
+            {isEditing && (
+              <form onSubmit={submitProfileUpdate} className="mt-6 border border-gray-200 rounded-lg p-4 space-y-3 bg-gray-50">
+                <TextArea
+                  label="Bio"
+                  value={formState.bio}
+                  onChange={(event) => setFormState((prev) => ({ ...prev, bio: event.target.value }))}
+                  rows={3}
+                />
+                <Input
+                  label="Location"
+                  value={formState.location}
+                  onChange={(event) => setFormState((prev) => ({ ...prev, location: event.target.value }))}
+                  placeholder="City, Country"
+                />
+                <Input
+                  label="Git Profile URL"
+                  value={formState.website}
+                  onChange={(event) => setFormState((prev) => ({ ...prev, website: event.target.value }))}
+                  placeholder="https://github.com/your-username"
+                />
+                <Input
+                  label="Interests"
+                  value={formState.interestsInput}
+                  onChange={(event) => setFormState((prev) => ({ ...prev, interestsInput: event.target.value }))}
+                  placeholder="react, node.js, system design"
+                />
+
+                <div className="flex gap-2">
+                  <Button type="submit" size="sm" loading={updateProfileMutation.isLoading}>
+                    Save Changes
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsEditing(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
             )}
+
+            
           </div>
         </div>
       </div>

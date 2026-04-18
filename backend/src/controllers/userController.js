@@ -38,12 +38,28 @@ const getProfile = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const { interests, goals } = req.body;
+    const {
+      interests,
+      goals,
+      bio,
+      location,
+      website,
+    } = req.body;
     const userId = req.user._id;
 
     const updateData = {};
-    if (interests) updateData.interests = interests;
+    if (interests) {
+      updateData.interests = Array.from(new Set(
+        interests
+          .map((item) => String(item || '').trim())
+          .filter(Boolean)
+      )).slice(0, 20);
+    }
+
     if (goals) updateData.goals = { ...req.user.goals, ...goals };
+    if (bio !== undefined) updateData.bio = String(bio || '').trim();
+    if (location !== undefined) updateData.location = String(location || '').trim();
+    if (website !== undefined) updateData.website = String(website || '').trim();
 
     const user = await User.findByIdAndUpdate(
       userId,
@@ -51,7 +67,7 @@ const updateProfile = async (req, res) => {
       { new: true, runValidators: true }
     );
 
-    if (interests || goals) {
+    if (interests || goals || bio !== undefined || location !== undefined || website !== undefined) {
       logger.info(`Profile updated for user ${user.email}, learning path regeneration needed`);
     }
 
@@ -59,6 +75,39 @@ const updateProfile = async (req, res) => {
   } catch (error) {
     logger.error('Error updating profile:', error);
     res.status(500).json({ error: 'Error updating profile' });
+  }
+};
+
+
+const getUserPosts = async (req, res) => {
+  try {
+    const userId = req.params.id || req.user._id;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = Math.min(parseInt(req.query.limit, 10) || 20, 50);
+    const skip = (page - 1) * limit;
+
+    const [posts, total] = await Promise.all([
+      Post.find({ userId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('userId', 'username email')
+        .select('-embedding'),
+      Post.countDocuments({ userId }),
+    ]);
+
+    res.json({
+      posts,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    logger.error('Error getting user posts:', error);
+    res.status(500).json({ error: 'Error fetching user posts' });
   }
 };
 
@@ -294,6 +343,7 @@ const toggleBookmark = async (req, res) => {
 module.exports = {
   getProfile,
   updateProfile,
+  getUserPosts,
   getActivityHistory,
   addActivity,
   getSuggestedUsers,

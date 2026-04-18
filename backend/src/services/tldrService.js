@@ -64,17 +64,17 @@ function buildFallbackTLDR(title = '', content = '') {
 }
 
 
-function cleanTLDR(text = '') {
-  let cleaned = String(text || '')
-    .trim()
-    .replace(/^["'`]+|["'`]+$/g, '') // Remove leading/trailing quotes
-    .replace(/\n/g, ' ') // Remove newlines
-    .replace(/\s+/g, ' ') // Normalize spaces
-    .replace(/^(TLDR|TL;DR|Summary|Abstract):\s*/i, '') // Remove prefix headers
-    .trim();
+// function cleanTLDR(text = '') {
+//   let cleaned = String(text || '')
+//     .trim()
+//     .replace(/^["'`]+|["'`]+$/g, '') // Remove leading/trailing quotes
+//     .replace(/\n/g, ' ') // Remove newlines
+//     .replace(/\s+/g, ' ') // Normalize spaces
+//     .replace(/^(TLDR|TL;DR|Summary|Abstract):\s*/i, '') // Remove prefix headers
+//     .trim();
 
-  return cleaned;
-}
+//   return cleaned;
+// }
 
 
 async function generateTLDR({ 
@@ -107,10 +107,10 @@ async function generateTLDR({
       }
     }
 
-    const prompt = _buildTLDRPrompt(normalizedTitle, normalizedContent, context, type);
+    const prompt = buildTLDRPrompt(normalizedTitle, normalizedContent, context, type);
 
     const response = await ragService.llm.invoke(prompt);
-    let tldr = cleanTLDR(response);
+    let tldr = response?.text || '';
 
     if (!tldr || tldr.length < TLDR_MIN_LENGTH) {
       logger.warn('Generated TLDR too short, using fallback', {
@@ -139,7 +139,7 @@ async function generateTLDR({
 }
 
 
-function _buildTLDRPrompt(title, content, context, type) {
+function buildTLDRPrompt(title, content, context, type) {
   const typeGuide = {
     blog: 'focus on key concepts, insights, and technical ideas',
     repo: 'focus on features, capabilities, and use cases for developers',

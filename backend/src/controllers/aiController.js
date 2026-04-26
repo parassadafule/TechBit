@@ -1,6 +1,7 @@
 const Post = require('../models/Post');
 const ragService = require('../services/ragService');
 const platformService = require('../services/platformService');
+const { semanticSearch } = require('../services/searchService');
 const logger = require('../utils/logger');
 
 const safeAsync = async (fn, fallback = null, logMsg = '') => {
@@ -50,6 +51,53 @@ const validateInputs = async (inputs) => {
   }
 
   return result;
+};
+
+const toChunkDoc = (chunk) => ({
+  content: chunk.content || chunk.pageContent || '',
+  metadata: {
+    postId: chunk.metadata?.postId || null,
+    title: chunk.metadata?.title || 'Untitled',
+    source: chunk.metadata?.url || chunk.sourceUrl || 'Internal',
+    url: chunk.metadata?.url || chunk.sourceUrl || null,
+    tags: chunk.metadata?.tags || [],
+    type: chunk.metadata?.type || null,
+  },
+});
+
+const toPostDoc = (post) => ({
+  content: post.content || post.tldr || '',
+  metadata: {
+    postId: post._id?.toString?.() || post._id || null,
+    title: post.title || 'Untitled',
+    source: post.blogUrl || 'Internal',
+    url: post.blogUrl || null,
+    tags: post.tags || [],
+    type: post.type || null,
+  },
+});
+
+const mergeUniqueDocs = (...groups) => {
+  const merged = [];
+  const seen = new Set();
+
+  groups.flat().filter(Boolean).forEach((doc) => {
+    const key = [
+      doc.metadata?.postId || '',
+      doc.metadata?.url || '',
+      doc.metadata?.title || '',
+      (doc.content || '').slice(0, 120),
+    ].join('|');
+
+    if (!key.trim() || seen.has(key)) {
+      return;
+    }
+
+    seen.add(key);
+    merged.push(doc);
+  });
+
+  return merged;
 };
 
 
@@ -129,8 +177,12 @@ const summarizeMultimodal = async (req, res) => {
 
 const queryAgent = async (req, res) => {
   try {
-    const { query } = req.body;
+    const query = String(req.body?.query || '').trim();
     const userId = req.user?._id;
+
+    if (!query) {
+      return res.status(400).json({ error: 'Query is required' });
+    }
 
     const User = require('../models/User');
     const user = userId
@@ -139,30 +191,40 @@ const queryAgent = async (req, res) => {
 
     const interests = user?.interests || [];
 
-    let posts =
-      (await safeAsync(() =>
-        Post.find({ $text: { $search: query } })
-          .sort({ score: { $meta: 'textScore' } })
+    const [
+      chunkResults,
+      postResults,
+      interestPosts,
+      recentPosts,
+    ] = await Promise.all([
+      safeAsync(() => ragService.semanticSearch(query, 5), [], 'Chunk semantic search failed'),
+      safeAsync(() => semanticSearch(query, { limit: 5 }), [], 'Post semantic search failed'),
+      interests.length
+        ? safeAsync(
+          () => Post.find({ tags: { $in: interests } })
+            .sort({ createdAt: -1 })
+            .limit(5)
+            .lean(),
+          [],
+          'Interest-based fallback search failed'
+        )
+        : Promise.resolve([]),
+      safeAsync(
+        () => Post.find({})
+          .sort({ createdAt: -1 })
           .limit(5)
-      )) ||
-      (interests.length &&
-        (await safeAsync(() =>
-          Post.find({ tags: { $in: interests } }).limit(5)
-        ))) ||
-      (await safeAsync(async () => {
-        const results = await ragService.semanticSearch(query, 5);
-        const ids = results.map(r => r.metadata?.postId).filter(Boolean);
-        return ids.length ? Post.find({ _id: { $in: ids } }) : [];
-      })) ||
-      (await Post.find().sort({ createdAt: -1 }).limit(5));
+          .lean(),
+        [],
+        'Recent post fallback search failed'
+      ),
+    ]);
 
-    const docs = posts.map(p => ({
-      content: p.content || '',
-      metadata: {
-        title: p.title || 'Untitled',
-        source: p.blogUrl || 'Internal',
-      },
-    }));
+    const docs = mergeUniqueDocs(
+      chunkResults.map(toChunkDoc),
+      postResults.map(toPostDoc),
+      interestPosts.map(toPostDoc),
+      recentPosts.map(toPostDoc),
+    ).slice(0, 8);
 
     const response = await safeAsync(
       () => ragService.generateRAGResponse(query, interests, docs),
@@ -172,8 +234,9 @@ const queryAgent = async (req, res) => {
     if (!response) {
       return res.json({
         query,
-        answer: 'Service unavailable. Check sources.',
-        citations: docs.slice(0, 3),
+        answer: docs.length
+          ? 'I could not generate a strong answer right now, but I found some related sources you can review.'
+          : 'I could not find enough relevant information to answer that yet.',
         confidence: 0,
         fallback: true,
       });
@@ -182,7 +245,6 @@ const queryAgent = async (req, res) => {
     res.json({
       query,
       answer: response.answer,
-      citations: response.citations || [],
       confidence: response.confidence || 0,
       fallback: response.fallback || false,
     });

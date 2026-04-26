@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const SemanticChunk = require('./SemanticChunk');
 
 const postSchema = new mongoose.Schema(
   {
@@ -20,7 +21,6 @@ const postSchema = new mongoose.Schema(
     tldr: {
       type: String,
       trim: true,
-      maxlength: 800,
     },
     blogUrl: {
       type: String,
@@ -45,7 +45,7 @@ const postSchema = new mongoose.Schema(
     embedding: {
       type: [Number],
       default: [],
-      select: false, // Don't include embeddings in standard payloads
+      select: false, 
     },
     likes: {
       type: Number,
@@ -78,5 +78,31 @@ postSchema.virtual('commentsCount', {
 
 postSchema.set('toJSON', { virtuals: true });
 postSchema.set('toObject', { virtuals: true });
+
+postSchema.post('findOneAndDelete', async function deletedPostCleanup(doc) {
+  if (!doc?._id) {
+    return;
+  }
+
+  await SemanticChunk.deleteMany({ postId: doc._id });
+});
+
+postSchema.post('deleteOne', { document: true, query: false }, async function deletedPostCleanup() {
+  await SemanticChunk.deleteMany({ postId: this._id });
+});
+
+postSchema.pre('deleteMany', { document: false, query: true }, async function collectDeletedPostIds() {
+  const filter = this.getFilter();
+  const posts = await this.model.find(filter).select('_id').lean();
+  this._deletedPostIds = posts.map((post) => post._id);
+});
+
+postSchema.post('deleteMany', { document: false, query: true }, async function deletedPostsCleanup() {
+  if (!Array.isArray(this._deletedPostIds) || this._deletedPostIds.length === 0) {
+    return;
+  }
+
+  await SemanticChunk.deleteMany({ postId: { $in: this._deletedPostIds } });
+});
 
 module.exports = mongoose.model('Post', postSchema);

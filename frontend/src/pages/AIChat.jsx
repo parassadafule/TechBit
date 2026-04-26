@@ -15,7 +15,7 @@ const AIChat = () => {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: 'Hi! I can answer with retrieval-backed context and citations.',
+      content: 'Hi! I can answer based on the available developer context.',
     },
   ]);
 
@@ -30,7 +30,6 @@ const AIChat = () => {
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: data.answer,
-        citations: data.citations || data.sources || [],
         fallback: Boolean(data.fallback),
       }]);
     },
@@ -68,7 +67,7 @@ const AIChat = () => {
             <Bot size={28} className="mr-3 text-primary-600" />
             AI Assistant
           </h1>
-          <p className="text-gray-600 mt-1">RAG answers with citations and a curated developer briefing</p>
+          <p className="text-gray-600 mt-1">Context-aware answers and a curated developer briefing</p>
         </div>
         <div className="flex items-center space-x-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-lg">
           <Sparkles size={18} />
@@ -141,16 +140,6 @@ const AIChat = () => {
                     </p>
                   )}
 
-                  {message.citations && message.citations.length > 0 && (
-                    <div className="mt-2 space-y-1">
-                      <p className="text-xs font-semibold text-gray-600">Citations:</p>
-                      {message.citations.map((source, idx) => (
-                        <p key={idx} className="block text-xs text-primary-700">
-                          [{source.index || idx + 1}] {source.source}
-                        </p>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

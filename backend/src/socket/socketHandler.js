@@ -14,7 +14,7 @@ function initializeSocket(server) {
   });
 
   io.on('connection', (socket) => {
-    logger.info(`Socket connected: ${socket.id}`);
+    // logger.info(`Socket connected: ${socket.id}`);
 
     socket.on('join', (userId) => {
       socket.join(`user:${userId}`);

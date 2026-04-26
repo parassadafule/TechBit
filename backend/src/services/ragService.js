@@ -299,7 +299,6 @@ Summary:`,
         return {
           unifiedSummary: 'No content provided to summarize.',
           perItem: [],
-          citations: [],
           fallback: true,
         };
       }
@@ -347,16 +346,9 @@ Produce:
           .join('\n');
       }
 
-      const citations = normalized.map((item) => ({
-        index: item.index,
-        source: item.url || `${item.modality}-${item.index}`,
-        snippet: item.content.substring(0, 160),
-      }));
-
       return {
         unifiedSummary,
         perItem,
-        citations,
         fallback,
       };
     } catch (error) {
@@ -368,34 +360,65 @@ Produce:
   
   async generateRAGResponse(query, userInterests = [], retrievedDocs = []) {
     try {
+      const requestId = crypto.randomUUID().slice(0, 8);
       let searchResults = [];
-      try {
-        searchResults = await this.semanticSearch(query, this.topK);
-      } catch (retrievalError) {
-        if (this.isModelUnavailableError(retrievalError)) {
-          logger.warn(`[${requestId}] Embeddings unavailable, continuing without vector results`, {
-            message: retrievalError.message,
-          });
-          searchResults = [];
-        } else {
-          throw retrievalError;
+      if (!query || !String(query).trim()) {
+        return {
+          answer: 'Please ask a specific question so I can look for relevant context.',
+          confidence: 0,
+          fallback: true,
+        };
+      }
+
+      if (!Array.isArray(retrievedDocs) || retrievedDocs.length === 0) {
+        try {
+          searchResults = await this.semanticSearch(query, this.topK);
+        } catch (retrievalError) {
+          if (this.isModelUnavailableError(retrievalError)) {
+            logger.warn(`[${requestId}] Embeddings unavailable, continuing without vector results`, {
+              message: retrievalError.message,
+            });
+            searchResults = [];
+          } else {
+            throw retrievalError;
+          }
         }
       }
 
-      const allDocs = [...searchResults, ...retrievedDocs];
+      const allDocs = this.normalizeRetrievedDocs([
+        ...retrievedDocs,
+        ...searchResults,
+      ]).slice(0, this.topK);
+
+      if (allDocs.length === 0) {
+        return this.buildFallbackRAGResponse(query, userInterests, []);
+      }
 
       const context = allDocs
-        .map((doc, idx) => `[${idx + 1}] ${doc.content || doc.pageContent}`)
+        .map((doc, idx) => {
+          const title = doc.metadata?.title || `Source ${idx + 1}`;
+          const source = doc.metadata?.url || doc.metadata?.source || 'Internal';
+          const content = doc.content || doc.pageContent || '';
+          return `[${idx + 1}] Title: ${title}\nSource: ${source}\nContent: ${content.substring(0, 1600)}`;
+        })
         .join('\n\n');
 
-      const prompt = `As a developer assistant, answer the following question using the retrieved evidence. Provide a concise, citation-backed response.
+      const prompt = `You are a developer AI assistant answering a user's question using only the provided evidence.
+
+Rules:
+- Answer the user's actual question directly.
+- Use the evidence when it is relevant.
+- If the evidence is incomplete, say so clearly instead of guessing.
+- Keep the answer concise, practical, and developer-focused.
 
 Question: ${query}
 
 User Interests: ${userInterests.join(', ') || 'General development'}
 
 Evidence:
-${context}`;
+${context}
+
+Answer:`;
 
       let response;
       try {
@@ -415,15 +438,13 @@ ${context}`;
         throw llmError;
       }
 
-      const citations = this.buildCitations(allDocs);
       logger.debug(`[${requestId}] generateRAGResponse SUCCESS`, {
-        citationCount: citations.length,
+        contextCount: allDocs.length,
         responseLength: response?.length || 0,
       });
 
       return {
         answer: response,
-        citations,
         confidence: this.calculateConfidence(searchResults),
         fallback: false,
       };
@@ -593,7 +614,6 @@ Step X: [Resource Number] - Reason: [Why this step]`;
     if (!docs || docs.length === 0) {
       return {
         answer: `I wasn't able to reach local Ollama to answer "${query}". Please make sure Ollama is running and the configured model is installed.`,
-        citations: [],
         confidence: 0,
         fallback: true,
       };
@@ -619,34 +639,47 @@ Step X: [Resource Number] - Reason: [Why this step]`;
 
     return {
       answer,
-      citations: this.buildCitations(docs),
       confidence: 0.2,
       fallback: true,
     };
   }
 
-  
-  buildCitations(docs = []) {
+  normalizeRetrievedDocs(docs = []) {
+    const normalized = [];
     const seen = new Set();
-    const citations = [];
 
     docs.forEach((doc, idx) => {
-      const url = doc.metadata?.url || doc.metadata?.source || `Source ${idx + 1}`;
-      const key = url;
+      const content = String(doc?.content || doc?.pageContent || '').trim();
+      if (!content) {
+        return;
+      }
+
+      const metadata = doc?.metadata || {};
+      const source = metadata.url || metadata.source || `Source ${idx + 1}`;
+      const title = metadata.title || `Source ${idx + 1}`;
+      const key = [
+        metadata.postId || '',
+        source,
+        title,
+        content.slice(0, 120),
+      ].join('|');
 
       if (seen.has(key)) {
         return;
       }
-      seen.add(key);
 
-      citations.push({
-        index: idx + 1,
-        source: url,
-        snippet: (doc.content || doc.pageContent || '').substring(0, 160),
+      seen.add(key);
+      normalized.push({
+        content,
+        metadata: {
+          ...metadata,
+          source,
+          title,
+        },
       });
     });
 
-    return citations;
+    return normalized;
   }
 
   

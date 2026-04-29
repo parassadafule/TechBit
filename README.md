@@ -6,7 +6,7 @@ TechBit is a full-stack developer platform for sharing technical posts, discover
 
 - Backend API with Express, MongoDB, Passport OAuth, and Socket.IO.
 - Frontend app with React, Vite, TanStack Query, and React Router.
-- Post workflows: manual post creation, URL-based post generation, likes, shares, comments, bookmarks.
+- Post workflows: manual post creation, URL-based post generation, likes, shares, comments.
 - AI workflows: summarization, multimodal summarization, RAG-style query responses, recommendation and briefing endpoints.
 - Personalized learning paths with regenerate and step completion flows.
 - Trend ingestion from GitHub, Stack Overflow, Reddit, Dev.to, and Hacker News.

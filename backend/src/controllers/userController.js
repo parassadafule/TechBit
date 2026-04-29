@@ -288,58 +288,6 @@ const getSuggestedUsers = async (req, res) => {
   }
 };
 
-
-const getBookmarks = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id)
-      .populate({
-        path: 'bookmarks',
-        populate: {
-          path: 'userId',
-          select: 'username email',
-        },
-      })
-      .select('bookmarks');
-
-    res.json({
-      bookmarks: user?.bookmarks || [],
-    });
-  } catch (error) {
-    logger.error('Error getting bookmarks:', error);
-    res.status(500).json({ error: 'Error fetching bookmarks' });
-  }
-};
-
-
-const toggleBookmark = async (req, res) => {
-  try {
-    const { postId } = req.params;
-    const user = await User.findById(req.user._id).select('bookmarks');
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    const exists = user.bookmarks.some((bookmarkId) => bookmarkId.toString() === postId);
-
-    if (exists) {
-      user.bookmarks = user.bookmarks.filter((bookmarkId) => bookmarkId.toString() !== postId);
-    } else {
-      user.bookmarks.push(postId);
-    }
-
-    await user.save();
-
-    res.json({
-      bookmarked: !exists,
-      bookmarks: user.bookmarks,
-    });
-  } catch (error) {
-    logger.error('Error toggling bookmark:', error);
-    res.status(500).json({ error: 'Error updating bookmark' });
-  }
-};
-
 module.exports = {
   getProfile,
   updateProfile,
@@ -347,6 +295,4 @@ module.exports = {
   getActivityHistory,
   addActivity,
   getSuggestedUsers,
-  getBookmarks,
-  toggleBookmark,
 };

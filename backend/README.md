@@ -103,8 +103,7 @@ Base path: /api
 - GET /api/users/activity
 - POST /api/users/activity
 - GET /api/users/suggested
-- GET /api/users/bookmarks
-- POST /api/users/bookmarks/:postId
+<!-- Bookmarks endpoints removed -->
 
 ### Posts
 

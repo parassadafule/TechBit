@@ -1,6 +1,6 @@
 # TechBit Frontend
 
-React + Vite frontend for TechBit, including feed, search, trends, AI chat, learning path, profile, bookmarks, and notifications.
+React + Vite frontend for TechBit, including feed, search, trends, AI chat, learning path, profile, and notifications.
 
 ## 🚀 Features
 
@@ -12,7 +12,7 @@ React + Vite frontend for TechBit, including feed, search, trends, AI chat, lear
 - AI chat page with citation rendering and fallback state handling.
 - Learning path page with regenerate and complete-step actions.
 - Trends page with source filters and manual refresh.
-- Bookmarks page backed by user bookmark APIs.
+<!-- Bookmarks removed -->
 - Notifications page with live socket updates and read/delete actions.
 
 ## Tech Stack
@@ -70,7 +70,7 @@ npm run dev
 - /
 - /post/:postId
 - /search
-- /bookmarks
+<!-- /bookmarks removed -->
 - /profile and /profile/:userId
 - /ai-chat
 - /learning

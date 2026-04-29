@@ -167,7 +167,7 @@ const LearningPath = () => {
                             {step.relatedPosts.map((post) => (
                               <a
                                 key={post._id}
-                                href={`/post/${post._id}`}
+                                href={`/app/post/${post._id}`}
                                 className="flex items-center space-x-2 text-sm text-primary-600 hover:underline"
                               >
                                 <Target size={14} />

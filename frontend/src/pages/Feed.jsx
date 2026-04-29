@@ -10,19 +10,18 @@ import { useAuth } from '../contexts/AuthContext';
 
 const Feed = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [filter, setFilter] = useState('all'); // all, blog, repo, video, podcast
-  const [sort, setSort] = useState('latest'); // latest, trending, popular
+  const [filter, setFilter] = useState('all'); 
+  // const [sort, setSort] = useState('latest');
   const { user, isAuthenticated } = useAuth();
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['posts', 'feed', filter, sort],
+    queryKey: ['posts', 'feed', filter ],
     queryFn: async () => {
-      console.log('Fetching feed with filter:', filter, 'sort:', sort);
+      console.log('Fetching feed with filter:', filter );
       const result = await postAPI.getFeed({ 
         page: 1, 
         limit: 20,
         type: filter !== 'all' ? filter : undefined,
-        sort,
       });
       console.log('Feed result:', result);
       return result;
@@ -41,10 +40,9 @@ const Feed = () => {
     { value: 'podcast', label: 'Podcasts', icon: '🎙️' },
   ];
 
-  const sortOptions = [
-    { value: 'latest', label: 'Latest', icon: Clock },
-    { value: 'trending', label: 'Trending', icon: TrendingUp },
-  ];
+  // const sortOptions = [
+  //   { value: 'latest', label: 'Latest', icon: Clock },
+  // ];
 
   return (
     <div className="space-y-6">
@@ -85,8 +83,8 @@ const Feed = () => {
           </div>
         </div>
 
-        {}
-        <div className="flex items-center gap-2">
+        
+        {/* <div className="flex items-center gap-2">
           {sortOptions.map(({ value, label, icon: Icon }) => (
             <button
               key={value}
@@ -101,7 +99,7 @@ const Feed = () => {
               <span className="font-medium">{label}</span>
             </button>
           ))}
-        </div>
+        </div> */}
       </div>
 
       {}

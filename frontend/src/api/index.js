@@ -56,16 +56,6 @@ export const userAPI = {
     });
     return response.data;
   },
-
-  getBookmarks: async () => {
-    const response = await api.get('/users/bookmarks');
-    return response.data;
-  },
-
-  toggleBookmark: async (postId) => {
-    const response = await api.post(`/users/bookmarks/${postId}`);
-    return response.data;
-  },
 };
 
 export const postAPI = {

@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, TrendingUp, BookOpen, MessageSquare, Bell, Bookmark, LogOut } from 'lucide-react';
+import { Home, Search, TrendingUp, BookOpen, MessageSquare, Bell, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import Avatar from './ui/Avatar';
 
@@ -10,12 +10,11 @@ const Navbar = () => {
   const isActive = (path) => location.pathname === path;
 
   const navLinks = [
-    { path: '/', icon: Home, label: 'Feed' },
-    { path: '/search', icon: Search, label: 'Search' },
-    { path: '/trends', icon: TrendingUp, label: 'Trends' },
-    { path: '/bookmarks', icon: Bookmark, label: 'Bookmarks' },
-    { path: '/learning', icon: BookOpen, label: 'Learning' },
-    { path: '/ai-chat', icon: MessageSquare, label: 'AI Chat' },
+    { path: '/app', icon: Home, label: 'Feed' },
+    { path: '/app/search', icon: Search, label: 'Search' },
+    { path: '/app/trends', icon: TrendingUp, label: 'Trends' },
+    { path: '/app/learning', icon: BookOpen, label: 'Learning' },
+    { path: '/app/ai-chat', icon: MessageSquare, label: 'AI Chat' },
   ];
 
   return (
@@ -23,7 +22,7 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {}
-          <Link to="/" className="flex items-center space-x-2">
+          <Link to="/app" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg">T</span>
             </div>
@@ -51,7 +50,7 @@ const Navbar = () => {
           {}
           <div className="flex items-center space-x-4">
             <Link
-              to="/notifications"
+              to="/app/notifications"
               className="relative p-2 text-gray-600 hover:bg-gray-50 rounded-lg"
             >
               <Bell size={20} />
@@ -60,7 +59,7 @@ const Navbar = () => {
             </Link>
 
             <Link
-              to={`/profile`}
+              to="/app/profile"
               className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-lg"
             >
               <Avatar src={null} alt={user?.username} size="sm" />

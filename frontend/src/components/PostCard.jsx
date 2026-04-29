@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, ExternalLink, Sparkles } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, ExternalLink, Sparkles } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -45,18 +45,10 @@ const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
   const { user, setUser, checkAuth } = useAuth();
   const [isLiked, setIsLiked] = useState(post?.likedByUser || false);
   const [likesCount, setLikesCount] = useState(post?.likes || 0);
-  const [isBookmarked, setIsBookmarked] = useState(
-    Array.isArray(user?.bookmarks)
-      && user.bookmarks.some((bookmarkId) => String(bookmarkId) === String(post?._id))
-  );
+  
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    setIsBookmarked(
-      Array.isArray(user?.bookmarks)
-      && user.bookmarks.some((bookmarkId) => String(bookmarkId) === String(post?._id))
-    );
-  }, [user?.bookmarks, post?._id]);
+  
 
   if (!post || !post._id || !post.userId) {
     return null;
@@ -87,26 +79,7 @@ const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
     },
   });
 
-  const bookmarkMutation = useMutation({
-    mutationFn: () => userAPI.toggleBookmark(post._id),
-    onMutate: () => {
-      setIsBookmarked((prev) => !prev);
-    },
-    onError: () => {
-      setIsBookmarked((prev) => !prev);
-    },
-    onSuccess: async (result) => {
-      if (user) {
-        setUser({
-          ...user,
-          bookmarks: result.bookmarks || [],
-        });
-      } else {
-        await checkAuth();
-      }
-      queryClient.invalidateQueries(['bookmarks']);
-    },
-  });
+  // bookmark functionality removed
 
   const formattedContent = normalizeGeneratedMarkdown(post.content);
   const formattedTldr = normalizeGeneratedMarkdown(post.tldr, { isTldr: true });
@@ -116,11 +89,11 @@ const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
       {}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
-          <Link to={`/profile/${post.userId._id}`}>
+          <Link to={`/app/profile/${post.userId._id}`}>
             <Avatar src={null} alt={post.userId.username} />
           </Link>
           <div>
-            <Link to={`/profile/${post.userId._id}`} className="font-semibold text-gray-900 hover:underline">
+            <Link to={`/app/profile/${post.userId._id}`} className="font-semibold text-gray-900 hover:underline">
               {post.userId.username}
             </Link>
             <div className="flex items-center space-x-2 text-sm text-gray-500">
@@ -161,7 +134,7 @@ const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
       </div>
 
       {}
-      <Link to={`/post/${post._id}`}>
+      <Link to={`/app/post/${post._id}`}>
         <h2 className="text-xl font-bold text-gray-900 mb-3 hover:text-primary-600 cursor-pointer">
           {post.title}
         </h2>
@@ -212,7 +185,7 @@ const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
           {post.tags.slice(0, 5).map((tag) => (
             <Link
               key={tag}
-              to={`/search?tags=${tag}`}
+              to={`/app/search?tags=${tag}`}
               className="text-sm text-primary-600 hover:text-primary-700 font-medium"
             >
               #{tag}
@@ -235,7 +208,7 @@ const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
           </button>
 
           <Link
-            to={`/post/${post._id}`}
+            to={`/app/post/${post._id}`}
             className="flex items-center space-x-2 text-gray-500 hover:text-primary-600"
           >
             <MessageCircle size={20} />
@@ -250,15 +223,6 @@ const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
             <span className="text-sm font-medium">{post.shares || 0}</span>
           </button>
         </div>
-
-        <button
-          onClick={() => bookmarkMutation.mutate()}
-          className={`p-2 hover:bg-gray-50 rounded-lg ${
-            isBookmarked ? 'text-primary-600' : 'text-gray-500 hover:text-primary-600'
-          }`}
-        >
-          <Bookmark size={20} />
-        </button>
       </div>
     </Card>
   );

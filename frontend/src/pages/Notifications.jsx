@@ -130,7 +130,7 @@ const Notifications = () => {
                     {}
                     {notification.relatedId && (
                       <a
-                        href={`/post/${notification.relatedId}`}
+                        href={`/app/post/${notification.relatedId}`}
                         className="text-sm text-primary-600 hover:underline mt-2 inline-block"
                       >
                         View post →

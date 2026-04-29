@@ -3,11 +3,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SocketProvider } from './contexts/SocketContext';
 import MainLayout from './layouts/MainLayout';
+import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Feed from './pages/Feed';
 import PostDetail from './pages/PostDetail';
 import Search from './pages/Search';
-import Bookmarks from './pages/Bookmarks';
 import Profile from './pages/Profile';
 import AIChat from './pages/AIChat';
 import LearningPath from './pages/LearningPath';
@@ -45,12 +45,11 @@ const ProtectedRoute = ({ children }) => {
 function AppRoutes() {
   return (
     <Routes>
-      {}
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
 
-      {}
       <Route
-        path="/"
+        path="/app"
         element={
           <ProtectedRoute>
             <MainLayout />
@@ -60,7 +59,6 @@ function AppRoutes() {
         <Route index element={<Feed />} />
         <Route path="post/:postId" element={<PostDetail />} />
         <Route path="search" element={<Search />} />
-        <Route path="bookmarks" element={<Bookmarks />} />
         <Route path="profile/:userId" element={<Profile />} />
         <Route path="profile" element={<Profile />} />
         <Route path="ai-chat" element={<AIChat />} />
@@ -69,7 +67,6 @@ function AppRoutes() {
         <Route path="notifications" element={<Notifications />} />
       </Route>
 
-      {}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

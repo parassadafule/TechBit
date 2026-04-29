@@ -48,12 +48,20 @@ const userSchema = new mongoose.Schema(
         trim: true,
       },
     ],
-    bookmarks: [
+    likedTags: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Post',
+        type: String,
+        trim: true,
+        lowercase: true,
       },
     ],
+    recentSearches: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+    // bookmarks removed
     activityHistory: [
       {
         action: {

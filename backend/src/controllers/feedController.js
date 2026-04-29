@@ -1,6 +1,5 @@
-const Post = require('../models/Post');
 const User = require('../models/User');
-const { generateFeed } = require('../services/feedEngine');
+const { getPersonalizedFeed } = require('../services/feedEngine');
 const logger = require('../utils/logger');
 
 const getFeed = async (req, res) => {
@@ -12,43 +11,13 @@ const getFeed = async (req, res) => {
       : [];
 
     const user = await User.findById(req.user._id)
-      .select('interests')
+      .select('interests likedTags recentSearches')
       .lean();
 
-    const matchStage = {
-      ...(type ? { type } : {}),
-      ...(tags.length > 0 ? { tags: { $in: tags } } : {}),
-    };
-
-    const posts = await Post.aggregate([
-      { $match: matchStage },
-      {
-        $lookup: {
-          from: 'comments',
-          localField: '_id',
-          foreignField: 'postId',
-          as: 'comments',
-        },
-      },
-      {
-        $addFields: {
-          commentsCount: { $size: '$comments' },
-          isTrending: {
-            $ifNull: ['$isTrending', false],
-          },
-        },
-      },
-      {
-        $project: {
-          comments: 0,
-          embedding: 0,
-        },
-      },
-      { $sort: { createdAt: -1 } },
-      { $limit: 200 },
-    ]);
-
-    const rankedFeed = generateFeed(posts, user || { interests: [] }, limit);
+    const rankedFeed = await getPersonalizedFeed(user || { interests: [] }, limit, {
+      type,
+      tags,
+    });
 
     res.json({
       posts: rankedFeed,

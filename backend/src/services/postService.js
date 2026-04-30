@@ -8,7 +8,7 @@ const logger = require('../utils/logger');
 const TIMEOUTS = {
   SUMMARY: 12000,
   EMBEDDING: 15000,
-  TLDR: 10000,
+  TLDR: 15000,
 };
 
 

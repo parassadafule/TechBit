@@ -28,7 +28,11 @@ async function requestEmbedding(model, prompt) {
       prompt,
     },
     {
-      timeout: EMBEDDING_TIMEOUT_MS,
+      timeout: Math.max(EMBEDDING_TIMEOUT_MS, 45000),
+      headers: {
+        'ngrok-skip-browser-warning': 'true',
+        'User-Agent': 'TechBit-Backend/1.0',
+      },
     },
   );
 

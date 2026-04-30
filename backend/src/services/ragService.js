@@ -40,7 +40,11 @@ class RAGService {
   async getOllamaStatus() {
     try {
       const response = await axios.get(`${this.ollamaBaseUrl}/api/tags`, {
-        timeout: 5000,
+        timeout: 10000,
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+          'User-Agent': 'TechBit-Backend/1.0',
+        },
       });
 
       const models = (response.data?.models || []).map((model) => model.name);
@@ -259,6 +263,11 @@ Summary:`,
 
       const response = await chain.call({
         query: 'Summarize this content',
+      }, {
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+          'User-Agent': 'TechBit-Backend/1.0',
+        },
       });
 
       const tags = this.extractTags(content);
@@ -335,7 +344,12 @@ Produce:
       let unifiedSummary;
       let fallback = false;
       try {
-        unifiedSummary = await this.llm.call(prompt);
+        unifiedSummary = await this.llm.call(prompt, {
+          headers: {
+            'ngrok-skip-browser-warning': 'true',
+            'User-Agent': 'TechBit-Backend/1.0',
+          },
+        });
       } catch (error) {
         if (!this.isModelUnavailableError(error)) {
           throw error;
@@ -423,7 +437,12 @@ Answer:`;
       let response;
       try {
         logger.debug(`[${requestId}] Calling LLM...`);
-        response = await this.llm.call(prompt);
+        response = await this.llm.call(prompt, {
+          headers: {
+            'ngrok-skip-browser-warning': 'true',
+            'User-Agent': 'TechBit-Backend/1.0',
+          },
+        });
         logger.debug(`[${requestId}] LLM returned`, {
           responseLength: response?.length || 0,
           responseStart: response?.substring(0, 100) || 'EMPTY',

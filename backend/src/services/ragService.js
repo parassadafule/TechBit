@@ -12,7 +12,7 @@ const logger = require('../utils/logger');
 
 class RAGService {
   constructor() {
-    this.ollamaBaseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+    this.ollamaBaseUrl = (process.env.OLLAMA_BASE_URL || 'http://localhost:11434').replace(/\/$/, '');
     this.embeddingModel = process.env.OLLAMA_EMBEDDING_MODEL || 'nomic-embed-text:latest';
     this.chatModel = process.env.OLLAMA_CHAT_MODEL || 'phi3:latest';
     this.chunkSize = parseInt(process.env.CHUNK_SIZE) || 500;

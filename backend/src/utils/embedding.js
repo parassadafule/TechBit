@@ -1,7 +1,7 @@
 const axios = require('axios');
 const logger = require('./logger');
 
-const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+const OLLAMA_BASE_URL = (process.env.OLLAMA_BASE_URL || 'http://localhost:11434').replace(/\/$/, '');
 const OLLAMA_EMBEDDING_MODEL = process.env.OLLAMA_EMBEDDING_MODEL || 'nomic-embed-text:latest';
 const EMBEDDING_TIMEOUT_MS = parseInt(process.env.OLLAMA_EMBEDDING_TIMEOUT_MS, 10) || 30000;
 const DEFAULT_EMBEDDING_INPUT_LIMIT = 4000;
@@ -52,9 +52,9 @@ async function getEmbedding(text, options = {}) {
   }
 
   let lastError = null;
+  const maxAttempts = Math.max(1, Number(options.retries) || 2);
 
-  
-  try {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     for (const model of getEmbeddingModelCandidates()) {
       try {
         return await requestEmbedding(model, normalizedText);
@@ -68,11 +68,10 @@ async function getEmbedding(text, options = {}) {
         });
       }
     }
-  } catch (error) {
-    lastError = error;
-  }
-  if (attempt < 2) {
-    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    if (attempt < maxAttempts) {
+      await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+    }
   }
 
   logger.warn('Failed to generate embedding from local Ollama', {

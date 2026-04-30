@@ -157,6 +157,20 @@ async function fetchCandidatePosts(options = {}) {
     { $match: matchStage },
     {
       $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'author',
+      },
+    },
+    {
+      $unwind: {
+        path: '$author',
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $lookup: {
         from: 'comments',
         localField: '_id',
         foreignField: 'postId',
@@ -169,8 +183,19 @@ async function fetchCandidatePosts(options = {}) {
       },
     },
     {
+      $addFields: {
+        userId: {
+          _id: '$author._id',
+          username: '$author.username',
+          email: '$author.email',
+          avatarUrl: '$author.avatarUrl',
+        },
+      },
+    },
+    {
       $project: {
         comments: 0,
+        author: 0,
       },
     },
     { $sort: { createdAt: -1 } },

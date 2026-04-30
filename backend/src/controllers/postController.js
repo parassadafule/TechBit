@@ -1,6 +1,7 @@
 const Post = require('../models/Post');
 const User = require('../models/User');
 const logger = require('../utils/logger');
+const { emitPostCreated } = require('../socket/socketHandler');
 const {
   createPost,
   createPostFromUrl,
@@ -22,6 +23,7 @@ const uploadPost = async (req, res) => {
 
     const post = await createPostFromUrl({ url, type, userId });
     logger.info('Post created from URL', { postId: post._id, userId });
+    emitPostCreated(userId.toString(), post);
     res.status(201).json(post);
   } catch (error) {
     const statusCode = error.statusCode || 500;
@@ -52,6 +54,7 @@ const createPostHandler = async (req, res) => {
     });
 
     logger.info('Post created manually', { postId: post._id, userId });
+    emitPostCreated(userId.toString(), post);
     res.status(201).json(post);
   } catch (error) {
     const statusCode = error.statusCode || 500;

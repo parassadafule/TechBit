@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Heart, MessageCircle, Share2, MoreHorizontal, ExternalLink, Sparkles } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import ReactMarkdown from 'react-markdown';
@@ -8,47 +8,21 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import Card from './ui/Card';
 import Avatar from './ui/Avatar';
 import Badge from './ui/Badge';
-import { postAPI, userAPI } from '../api';
+import { postAPI } from '../api';
 import { formatTimeAgo } from '../utils/date';
 import { extractDomain, getPostTypeColor, getPostTypeIcon } from '../utils/helpers';
 import { useAuth } from '../contexts/AuthContext';
 
-const normalizeGeneratedMarkdown = (text = '', { isTldr = false } = {}) => {
-  const value = String(text || '').trim();
-  if (!value) return '';
 
-  let normalized = value
-    .replace(/\r/g, '')
-    .replace(/📋\s*Overview/gi, '### Overview')
-    .replace(/🔑\s*Key\s*Takeaways/gi, '### Key Takeaways')
-    .replace(/🛠\s*Practical\s*Application/gi, '### Practical Application')
-    .replace(/💡\s*Why\s*It\s*Matters/gi, '### Why It Matters')
-    .replace(/📚\s*Next\s*Steps/gi, '### Next Steps')
-    .replace(/^Overview\s*$/gim, '### Overview')
-    .replace(/^Key\s*Takeaways\s*$/gim, '### Key Takeaways')
-    .replace(/^Practical\s*Application\s*$/gim, '### Practical Application')
-    .replace(/^Why\s*It\s*Matters\s*$/gim, '### Why It Matters')
-    .replace(/^Next\s*Steps\s*$/gim, '### Next Steps')
-    .replace(/(^|\n)•\s+/g, '$1- ')
-    .replace(/\n{3,}/g, '\n\n');
-
-  if (isTldr) {
-    normalized = normalized
-      .replace(/\s+-\s+/g, '\n- ')
-      .replace(/\n{2,}/g, '\n');
-  }
-
-  return normalized.trim();
-};
 
 const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
-  const { user, setUser, checkAuth } = useAuth();
+  const { user } = useAuth();
+  const { pathname } = useLocation();
   const [isLiked, setIsLiked] = useState(post?.likedByUser || false);
   const [likesCount, setLikesCount] = useState(post?.likes || 0);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   const queryClient = useQueryClient();
-
-  
 
   if (!post || !post._id || !post.userId) {
     return null;
@@ -56,6 +30,11 @@ const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
 
   const isRecommended = userInterests.length > 0 && post.tags && 
     post.tags.some(tag => userInterests.includes(tag));
+
+  const authorId = post?.userId?._id;
+  const isProfilePage = pathname.startsWith('/app/profile');
+  const isOwnPost = user?._id && authorId && user._id === authorId;
+  const canManagePost = isProfilePage && isOwnPost;
 
   const likeMutation = useMutation({
     mutationFn: () => postAPI.likePost(post._id),
@@ -79,10 +58,24 @@ const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
     },
   });
 
-  // bookmark functionality removed
+  const deleteMutation = useMutation({
+    mutationFn: () => postAPI.deletePost(post._id),
+    onSuccess: () => {
+      setIsMenuOpen(false);
+      queryClient.invalidateQueries(['posts']);
+      queryClient.invalidateQueries(['posts', 'user', authorId]);
+      queryClient.invalidateQueries(['profile', authorId]);
+    },
+  });
 
-  const formattedContent = normalizeGeneratedMarkdown(post.content);
-  const formattedTldr = normalizeGeneratedMarkdown(post.tldr, { isTldr: true });
+  const handleDeletePost = () => {
+    const shouldDelete = window.confirm('Delete this post? This action cannot be undone.');
+    if (!shouldDelete) return;
+    deleteMutation.mutate();
+  };
+
+  const formattedContent = post.content;;
+  const formattedTldr = post.tldr.replace(/(^|\n)\s*•\s+/g, '$1- ').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();;
 
   return (
     <Card className="p-6 hover:shadow-md transition-shadow">
@@ -115,9 +108,30 @@ const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
             </div>
           </div>
         </div>
-        <button className="p-2 hover:bg-gray-100 rounded-lg">
-          <MoreHorizontal size={20} className="text-gray-500" />
-        </button>
+        {canManagePost && (
+          <div className="relative">
+            <button
+              onClick={() => setIsMenuOpen((prev) => !prev)}
+              className="p-2 hover:bg-gray-100 rounded-lg"
+              aria-label="Post options"
+              disabled={deleteMutation.isLoading}
+            >
+              <MoreHorizontal size={20} className="text-gray-500" />
+            </button>
+
+            {isMenuOpen && (
+              <div className="absolute right-0 top-11 z-10 w-40 rounded-lg border border-gray-200 bg-white shadow-lg p-1">
+                <button
+                  onClick={handleDeletePost}
+                  className="w-full text-left px-3 py-2 text-sm rounded-md text-red-600 hover:bg-red-50"
+                  disabled={deleteMutation.isLoading}
+                >
+                  {deleteMutation.isLoading ? 'Deleting...' : 'Delete post'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {}

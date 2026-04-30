@@ -33,7 +33,7 @@ const PostDetail = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {}
-      <Link to="/">
+      <Link to="/app">
         <Button variant="ghost">
           <ArrowLeft size={20} className="mr-2" />
           Back to Feed

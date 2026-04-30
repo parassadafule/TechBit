@@ -34,7 +34,7 @@ function buildFallbackTLDR(title = '', content = '') {
     .split(/(?<=[.!?])\s+/)
     .filter(Boolean)
     .map(s => s.trim())
-    .filter(s => s.length > 10); // Filter out very short sentences
+    .filter(s => s.length > 10);
 
   if (sentences.length === 0) {
     return contentStr.slice(0, TLDR_MAX_LENGTH);
@@ -109,8 +109,20 @@ async function generateTLDR({
 
     const prompt = buildTLDRPrompt(normalizedTitle, normalizedContent, context, type);
 
-    const response = await ragService.llm.invoke(prompt);
-    let tldr = response?.text || '';
+    let response;
+    try {
+      response = await ragService.llm.call(prompt, {
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+          'User-Agent': 'TechBit-Backend/1.0',
+        },
+      });
+    } catch (llmError) {
+      logger.warn('LLM call failed for TLDR, using fallback', { error: llmError.message });
+      return buildFallbackTLDR(normalizedTitle, normalizedContent);
+    }
+
+    let tldr = (response && (typeof response === 'string' ? response : response.text)) || '';
 
     if (!tldr || tldr.length < TLDR_MIN_LENGTH) {
       logger.warn('Generated TLDR too short, using fallback', {

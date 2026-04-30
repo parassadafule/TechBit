@@ -11,7 +11,6 @@ import { useAuth } from '../contexts/AuthContext';
 const Feed = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [filter, setFilter] = useState('all'); 
-  // const [sort, setSort] = useState('latest');
   const { user, isAuthenticated } = useAuth();
 
   const { data, isLoading, error } = useQuery({

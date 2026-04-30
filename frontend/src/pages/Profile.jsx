@@ -20,6 +20,8 @@ const Profile = () => {
   const [tab, setTab] = useState('posts');
   const [isEditing, setIsEditing] = useState(false);
   const [formState, setFormState] = useState({
+    name: '',
+    username: '',
     bio: '',
     location: '',
     website: '',
@@ -27,6 +29,8 @@ const Profile = () => {
   });
 
   const id = userId || currentUser?._id;
+
+  console.log('Profile component rendered with userId:', userId, 'currentUser:', currentUser);
 
   const isOwnProfile = !userId || userId === currentUser?._id;
 
@@ -67,10 +71,12 @@ const Profile = () => {
   }
 
   const user = profile || currentUser;
-  const userPosts = postsData?.posts || [];
+  const posts = postsData?.posts || [];
 
   const startEdit = () => {
     setFormState({
+      name: user?.name || '',
+      username: user?.username || '',
       bio: user?.bio || '',
       location: user?.location || '',
       website: user?.website || '',
@@ -88,6 +94,8 @@ const Profile = () => {
       .filter(Boolean);
 
     updateProfileMutation.mutate({
+      name: formState.name,
+      username: formState.username,
       bio: formState.bio,
       location: formState.location,
       website: formState.website,
@@ -105,7 +113,7 @@ const Profile = () => {
           <div className="flex-1">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{user?.username}</h1>
+                <h1 className="text-2xl font-bold text-gray-900">{user?.name}</h1>
                 <p className="text-gray-600">@{user?.username}</p>
               </div>
               
@@ -146,7 +154,7 @@ const Profile = () => {
             {}
             <div className="flex gap-6 mt-4 pt-4 border-t border-gray-100">
               <div>
-                <span className="font-bold text-gray-900">{userPosts.length}</span>
+                <span className="font-bold text-gray-900">{posts.length}</span>
                 <span className="text-gray-600 ml-1">Posts</span>
               </div>
               <div>
@@ -175,6 +183,18 @@ const Profile = () => {
 
             {isEditing && (
               <form onSubmit={submitProfileUpdate} className="mt-6 border border-gray-200 rounded-lg p-4 space-y-3 bg-gray-50">
+                <Input
+                  label="Enter Your Name"
+                  value={formState.name}
+                  onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))}
+                  placeholder="Your full name"
+                />
+                <Input
+                  label="Username"
+                  value={formState.username}
+                  onChange={(event) => setFormState((prev) => ({ ...prev, username: event.target.value }))}
+                  placeholder="Your username"
+                />
                 <TextArea
                   label="Bio"
                   value={formState.bio}
@@ -256,12 +276,12 @@ const Profile = () => {
             <div className="flex justify-center py-12">
               <Spinner size="lg" />
             </div>
-          ) : userPosts.length === 0 ? (
+          ) : posts.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-600">No posts yet</p>
             </div>
           ) : (
-            userPosts.map((post) => (
+            posts.map((post) => (
               <PostCard key={post._id} post={post} />
             ))
           )}

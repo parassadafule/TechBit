@@ -3,11 +3,10 @@ const logger = require('../utils/logger');
 
 let io;
 
-
 function initializeSocket(server) {
   io = socketIO(server, {
     cors: {
-      origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+      origin: process.env.FRONTEND_URL || 'http://localhost:5173',
       methods: ['GET', 'POST'],
       credentials: true,
     },
@@ -77,10 +76,24 @@ function emitTrendUpdate(trend) {
   }
 }
 
+function emitPostCreated(userId, post) {
+  if (io) {
+    io.to(`user:${userId}`).emit('post-created', {
+      postId: post._id,
+      title: post.title,
+      type: post.type,
+      createdAt: post.createdAt,
+      message: `Post "${post.title}" has been created successfully!`,
+    });
+    logger.debug(`Post created notification emitted to user ${userId}`);
+  }
+}
+
 module.exports = {
   initializeSocket,
   getIO,
   emitNotification,
   emitNewComment,
   emitTrendUpdate,
+  emitPostCreated,
 };

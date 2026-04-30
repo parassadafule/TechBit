@@ -10,8 +10,8 @@ import { useAuth } from '../contexts/AuthContext';
 
 const CreatePostModal = ({ isOpen, onClose, initialType = 'blog' }) => {
   const { isAuthenticated } = useAuth();
-  const [step, setStep] = useState(1); // 1: Choose method, 2: Manual/URL form
-  const [method, setMethod] = useState(null); // 'manual' or 'url'
+  const [step, setStep] = useState(1); 
+  const [method, setMethod] = useState(null); 
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -36,7 +36,6 @@ const CreatePostModal = ({ isOpen, onClose, initialType = 'blog' }) => {
     mutationFn: ({ url, type }) => postAPI.uploadPost(url, type),
     onSuccess: () => {
       queryClient.invalidateQueries(['posts']);
-      handleClose();
     },
   });
 
@@ -84,6 +83,9 @@ const CreatePostModal = ({ isOpen, onClose, initialType = 'blog' }) => {
 
   const handleUrlSubmit = (e) => {
     e.preventDefault();
+    const successMessage = 'Your post is being generated. This may take up to 5 minutes. You can continue using the app — it will appear in your profile automatically once ready.';
+    window.alert(successMessage);
+    handleClose();
     uploadMutation.mutate({ url, type: urlType });
   };
 

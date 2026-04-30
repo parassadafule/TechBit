@@ -8,7 +8,7 @@ const logger = require('../utils/logger');
 const TIMEOUTS = {
   SUMMARY: 12000,
   EMBEDDING: 15000,
-  TLDR: 8000,
+  TLDR: 10000,
 };
 
 
@@ -58,7 +58,6 @@ function validatePostInput({ title, content, type }) {
 function queuePostIndexing({ postId, title, content, url }) {
   setImmediate(async () => {
     try {
-    //   logger.debug('Starting background post indexing', { postId });
       const docs = await ragService.chunkAndEmbed(content, {
         postId,
         url,
@@ -315,22 +314,22 @@ OUTPUT FORMAT
 
 Generate the post in this exact markdown structure:
 
-📋 Overview
+• Overview
 (2-3 sentences explaining what this resource is and why it matters to developers)
 
-🔑 Key Takeaways
+• Key Takeaways
 - Point 1: Specific insight or feature
 - Point 2: Specific insight or feature
 - Point 3: Specific insight or feature
 - Point 4: Specific insight or feature
 
-🛠 Practical Application
+• Practical Application
 (Explain how developers can use this concept, tool, or knowledge in their projects. Be specific with examples or use cases)
 
-💡 Why It Matters
+• Why It Matters
 (Explain the broader impact or value proposition for the developer community)
 
-📚 Next Steps
+• Next Steps
 - Resource 1 to explore
 - Resource 2 to explore
 - Resource 3 to explore

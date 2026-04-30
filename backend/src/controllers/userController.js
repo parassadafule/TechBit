@@ -39,6 +39,8 @@ const getProfile = async (req, res) => {
 const updateProfile = async (req, res) => {
   try {
     const {
+      name,
+      username,
       interests,
       goals,
       bio,
@@ -48,6 +50,8 @@ const updateProfile = async (req, res) => {
     const userId = req.user._id;
 
     const updateData = {};
+    if (name !== undefined) updateData.name = String(name || '').trim();
+    if (username !== undefined) updateData.username = String(username || '').trim();
     if (interests) {
       updateData.interests = Array.from(new Set(
         interests
@@ -67,7 +71,7 @@ const updateProfile = async (req, res) => {
       { new: true, runValidators: true }
     );
 
-    if (interests || goals || bio !== undefined || location !== undefined || website !== undefined) {
+    if (name !== undefined || username !== undefined || interests || goals || bio !== undefined || location !== undefined || website !== undefined) {
       logger.info(`Profile updated for user ${user.email}, learning path regeneration needed`);
     }
 

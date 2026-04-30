@@ -506,7 +506,12 @@ Create a 5-step learning path by:
 Format each step as:
 Step X: [Resource Number] - Reason: [Why this step]`;
 
-      const response = await this.llm.call(prompt);
+      const response = await this.llm.call(prompt,{
+          headers: {
+            'ngrok-skip-browser-warning': 'true',
+            'User-Agent': 'TechBit-Backend/1.0',
+          }
+      });
 
       const steps = this.parseLearningPathResponse(response, posts);
 

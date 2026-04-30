@@ -114,6 +114,7 @@ const upsertOAuthUser = async ({ profile, provider }) => {
     const username = await generateUniqueUsername(usernameCandidate);
 
     user = new User({
+      name: String(name || '').trim(),
       username,
       email,
       oauthProvider: provider,

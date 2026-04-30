@@ -2,6 +2,11 @@ const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema(
   {
+    name: {
+      type: String,
+      trim: true,
+      maxlength: 100,
+    },
     username: {
       type: String,
       required: true,
@@ -61,7 +66,6 @@ const userSchema = new mongoose.Schema(
         trim: true,
       },
     ],
-    // bookmarks removed
     activityHistory: [
       {
         action: {

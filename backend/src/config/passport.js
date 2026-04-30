@@ -150,26 +150,8 @@ const upsertOAuthUser = async ({ profile, provider }) => {
 };
 
 passport.serializeUser((user, done) => {
-  logger.info(`Serializing user: ${user._id} - ${user.email}`);
-  done(null, user._id);
+  done(null, user);
 });
-
-passport.deserializeUser(async (id, done) => {
-  try {
-    const user = await User.findById(id);
-    if (user) {
-      logger.info(`User found: ${user.email}`);
-      done(null, user);
-    } else {
-      logger.warn(`User not found for id: ${id}`);
-      done(null, null);
-    }
-  } catch (error) {
-    logger.error('Error deserializing user:', error);
-    done(error, null);
-  }
-});
-
 passport.use(
   new GoogleStrategy(
     {

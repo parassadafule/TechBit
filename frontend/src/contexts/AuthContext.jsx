@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { authAPI } from '../api';
+import { authTokenKey } from '../lib/axios';
 import socketService from '../lib/socket';
 
 const AuthContext = createContext(null);
@@ -10,23 +11,52 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
+    const tokenFromUrl = getTokenFromUrl();
+    if (tokenFromUrl) {
+      window.localStorage.setItem(authTokenKey, tokenFromUrl);
+      clearTokenFromUrl();
+    }
     checkAuth();
   }, []);
 
+  const getTokenFromUrl = () => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('token');
+  };
+
+  const clearTokenFromUrl = () => {
+    const { pathname, search } = window.location;
+    const params = new URLSearchParams(search);
+    params.delete('token');
+    const nextSearch = params.toString();
+    const nextUrl = nextSearch ? `${pathname}?${nextSearch}` : pathname;
+    window.history.replaceState({}, document.title, nextUrl);
+  };
+
   const checkAuth = async () => {
+    const token = window.localStorage.getItem(authTokenKey);
+    if (!token) {
+      setUser(null);
+      setIsAuthenticated(false);
+      socketService.disconnect();
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const data = await authAPI.checkAuth();
-      const { authenticated, user: currentUser } = data;
+      const { user: currentUser } = data;
 
       setUser(currentUser);
-      setIsAuthenticated(Boolean(authenticated));
+      setIsAuthenticated(Boolean(currentUser));
 
-      if (authenticated && currentUser?._id) {
+      if (currentUser?._id) {
         socketService.connect(currentUser._id);
       } else {
         socketService.disconnect();
       }
     } catch (error) {
+      window.localStorage.removeItem(authTokenKey);
       setUser(null);
       setIsAuthenticated(false);
       socketService.disconnect();
@@ -46,6 +76,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await authAPI.logout();
+      window.localStorage.removeItem(authTokenKey);
       setUser(null);
       setIsAuthenticated(false);
       socketService.disconnect();

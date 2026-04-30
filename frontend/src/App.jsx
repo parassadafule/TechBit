@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SocketProvider } from './contexts/SocketContext';
@@ -14,6 +15,7 @@ import LearningPath from './pages/LearningPath';
 import Trends from './pages/Trends';
 import Notifications from './pages/Notifications';
 import Spinner from './components/ui/Spinner';
+import { authTokenKey } from './lib/axios';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,11 +44,39 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+const DashboardCallback = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+
+    if (token) {
+      window.localStorage.setItem(authTokenKey, token);
+      params.delete('token');
+      const nextSearch = params.toString();
+      const nextUrl = nextSearch ? `/dashboard?${nextSearch}` : '/dashboard';
+      window.history.replaceState({}, document.title, nextUrl);
+      navigate('/app', { replace: true });
+      return;
+    }
+
+    navigate('/login', { replace: true });
+  }, [navigate]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <Spinner size="xl" />
+    </div>
+  );
+};
+
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/dashboard" element={<DashboardCallback />} />
 
       <Route
         path="/app"

@@ -60,7 +60,7 @@ const generateUniqueUsername = async (rawBase) => {
   return username;
 };
 
-const extractEmailFromProfile = (profile, fallback) => {
+const extractEmail = (profile, fallback) => {
   if (profile.emails && profile.emails.length > 0) {
     const primaryEmail = profile.emails.find((email) => email.verified) || profile.emails[0];
     return primaryEmail.value;
@@ -69,7 +69,7 @@ const extractEmailFromProfile = (profile, fallback) => {
   return fallback;
 };
 
-const extractAvatarFromProfile = (profile) => {
+const extractAvatar = (profile) => {
   if (profile.photos && profile.photos.length > 0) {
     return profile.photos[0].value;
   }
@@ -97,10 +97,26 @@ const buildUsernameCandidate = (profile, email) => {
   return DEFAULT_USERNAME_PREFIX;
 };
 
+const buildFullName = (profile, email) => {
+  if (profile.displayName && typeof profile.displayName === 'string') {
+    return profile.displayName.trim();
+  }
+
+  if (profile.username && typeof profile.username === 'string') {
+    return profile.username.trim();
+  }
+
+  if (email) {
+    return email.split('@')[0].trim();
+  }
+
+  return DEFAULT_USERNAME_PREFIX;
+};
+
 const upsertOAuthUser = async ({ profile, provider }) => {
   const emailFallback = provider === 'github' && profile.username ? `${profile.username}@github.com` : undefined;
-  const email = extractEmailFromProfile(profile, emailFallback);
-  const avatarUrl = extractAvatarFromProfile(profile);
+  const email = extractEmail(profile, emailFallback);
+  const avatarUrl = extractAvatar(profile);
   const oauthFilter = { oauthProvider: provider, oauthId: profile.id };
 
   let user = await User.findOne(oauthFilter);
@@ -112,9 +128,10 @@ const upsertOAuthUser = async ({ profile, provider }) => {
   if (!user) {
     const usernameCandidate = buildUsernameCandidate(profile, email);
     const username = await generateUniqueUsername(usernameCandidate);
+    const name = buildFullName(profile, email);
 
     user = new User({
-      name: String(name || '').trim(),
+      name,
       username,
       email,
       oauthProvider: provider,

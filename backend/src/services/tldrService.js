@@ -159,43 +159,24 @@ function buildTLDRPrompt(title, content, context, type) {
     podcast: 'focus on discussion points, insights, and actionable advice',
   }[type] || 'focus on the main value proposition and key insights';
 
-  return `You are an expert technical content summarizer creating engaging TL;DRs for developer social feeds.
+  return `You are summarizing content into a TLDR.
 
-## TASK
-Generate a compelling TL;DR that makes developers curious and wanting to read the full post. This is NOT just the opening lines - create an actual summary highlighting key value, insights, and why it matters.
+STRICT RULES:
+- Generate 4 to 5 bullet points
+- Each bullet must be 1 concise sentence
+- Each bullet should represent a unique key idea
+- Rewrite completely (no copying)
+- Keep it simple and clear
+- No long paragraphs
+- Focus on ${typeGuide}
 
-## INPUT POST
+FORMAT:
+• sentence
+• sentence
+• sentence
 
-**Content:**
-${content}
-
-## RELATED CONTEXT
-${context}
-
-## GUIDELINES
-1. **Length:** 250-750 characters (5-8 lines)
-2. **Structure:** 
-   - Main idea (1-2 lines)
-   - Key points or insights (5-8 lines as paragraphs)
-3. **Focus:** ${typeGuide}
-4. **Tone:** 
-   - Clear, professional, developer-friendly
-   - Conversational, not AI-generated
-   - Like Dev.to, Hacker News, or LinkedIn posts
-5. **Content Requirements:**
-   - Extract the ACTUAL value/insight from the post
-   - Highlight concrete benefits or learning outcomes
-   - Include why developers should care
-   - Use specific technical terms when relevant
-6. **AVOID:**
-   - Generic phrases like "this post discusses" or "in this article"
-   - Emojis and hashtags  
-   - Just copying first sentences
-   - Vague statements without specifics
-
-
-## OUTPUT
-Return ONLY the TL;DR text. No code blocks, no headers, no markdown formatting beyond bullet points. Create something that makes developers think 'I want to read this.'`;
+CONTENT:
+${content}`;
 }
 
 module.exports = {

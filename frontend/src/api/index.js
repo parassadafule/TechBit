@@ -178,17 +178,29 @@ export const aiAPI = {
 
 export const learningPathAPI = {
   getLearningPath: async () => {
-    const response = await api.get('/learning-path');
+    try {
+      const response = await api.get('/learning-path');
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
+  create: async (goal) => {
+    const response = await api.post('/learning-path', { goal });
     return response.data;
   },
 
-  regenerate: async (payload = {}) => {
-    const response = await api.post('/learning-path/regenerate', payload);
+  complete: async (pathId) => {
+    const response = await api.patch(`/learning-path/${pathId}/complete`);
     return response.data;
   },
 
-  completeItem: async (pathId, step) => {
-    const response = await api.post(`/learning-path/${pathId}/complete/${step}`);
+  feedback: async (pathId, postId, helpful) => {
+    const response = await api.patch(`/learning-path/${pathId}/feedback`, { postId, helpful });
     return response.data;
   },
 };

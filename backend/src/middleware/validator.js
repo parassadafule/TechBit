@@ -125,25 +125,25 @@ const validationRules = {
 
   search: [
     query('q')
-      .optional()
+      .optional({ nullable: true, checkFalsy: true })
       .isString()
       .trim()
       .isLength({ max: 200 })
       .customSanitizer(sanitizeInput),
     query('tags')
-      .optional()
+      .optional({ nullable: true, checkFalsy: true })
       .isString()
       .customSanitizer(sanitizeInput),
     query('type')
-      .optional()
+      .optional({ nullable: true, checkFalsy: true })
       .isIn(['blog', 'repo', 'video', 'podcast'])
       .withMessage('Invalid post type'),
     query('page')
-      .optional()
+      .optional({ nullable: true, checkFalsy: true })
       .isInt({ min: 1 })
       .withMessage('Invalid page number'),
     query('limit')
-      .optional()
+      .optional({ nullable: true, checkFalsy: true })
       .isInt({ min: 1, max: 100 })
       .withMessage('Invalid limit'),
   ],
@@ -198,28 +198,6 @@ const validationRules = {
       .optional()
       .isString()
       .isLength({ max: 200 })
-      .customSanitizer(sanitizeInput),
-  ],
-
-  regenerateLearningPath: [
-    body('skillLevel')
-      .optional()
-      .isIn(['beginner', 'intermediate', 'advanced', 'expert'])
-      .withMessage('Invalid skill level'),
-    body('career')
-      .optional()
-      .isString()
-      .isLength({ max: 100 })
-      .customSanitizer(sanitizeInput),
-    body('targetRole')
-      .optional()
-      .isString()
-      .isLength({ max: 100 })
-      .customSanitizer(sanitizeInput),
-    body('timePerWeek')
-      .optional()
-      .isString()
-      .isLength({ max: 60 })
       .customSanitizer(sanitizeInput),
   ],
 

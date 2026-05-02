@@ -5,7 +5,6 @@ const Post = require('../models/Post');
 const Comment = require('../models/Comment');
 const Trend = require('../models/Trend');
 const Notification = require('../models/Notification');
-const LearningPath = require('../models/LearningPath');
 const ragService = require('../services/ragService');
 const { getEmbedding } = require('../utils/embedding');
 const logger = require('../utils/logger');
@@ -20,7 +19,6 @@ const seedData = async () => {
     await Comment.deleteMany({});
     await Trend.deleteMany({});
     await Notification.deleteMany({});
-    await LearningPath.deleteMany({});
     logger.info('Cleared existing data');
 
     const users = await User.create([
@@ -391,106 +389,6 @@ const seedData = async () => {
     ]);
 
     logger.info('Created trending topics');
-
-    await LearningPath.create([
-      {
-        userId: users[0]._id,
-        goals: { skillLevel: 'advanced', career: 'full-stack-developer' },
-        items: [
-          {
-            step: 1,
-            postId: posts[0]._id,
-            type: 'blog',
-            reason: 'Master React fundamentals',
-            completed: true,
-          },
-          {
-            step: 2,
-            postId: posts[3]._id,
-            type: 'blog',
-            reason: 'Learn backend development with Express',
-            completed: true,
-          },
-          {
-            step: 3,
-            postId: posts[2]._id,
-            type: 'blog',
-            reason: 'Understand deployment with Docker',
-            completed: false,
-          },
-          {
-            step: 4,
-            postId: posts[10]._id,
-            type: 'video',
-            reason: 'Complete full-stack project',
-            completed: false,
-          },
-        ],
-      },
-      {
-        userId: users[1]._id,
-        goals: { skillLevel: 'expert', career: 'ml-engineer' },
-        items: [
-          {
-            step: 1,
-            postId: posts[1]._id,
-            type: 'blog',
-            reason: 'Understand RAG architecture',
-            completed: true,
-          },
-          {
-            step: 2,
-            postId: posts[4]._id,
-            type: 'blog',
-            reason: 'Learn to use Ollama for local LLMs',
-            completed: true,
-          },
-          {
-            step: 3,
-            postId: posts[9]._id,
-            type: 'repo',
-            reason: 'Study LangChain implementations',
-            completed: false,
-          },
-          {
-            step: 4,
-            postId: posts[11]._id,
-            type: 'video',
-            reason: 'Build AI application',
-            completed: false,
-          },
-        ],
-      },
-      {
-        userId: users[2]._id,
-        goals: { skillLevel: 'expert', career: 'devops-engineer' },
-        items: [
-          {
-            step: 1,
-            postId: posts[2]._id,
-            type: 'blog',
-            reason: 'Docker production practices',
-            completed: true,
-          },
-          {
-            step: 2,
-            postId: posts[8]._id,
-            type: 'repo',
-            reason: 'Kubernetes patterns and best practices',
-            completed: false,
-          },
-          {
-            step: 3,
-            postId: posts[12]._id,
-            type: 'podcast',
-            reason: 'Learn from DevOps experts',
-            completed: false,
-          },
-        ],
-      },
-    ]);
-
-    logger.info('Created learning paths');
 
     const notifications = [];
     notifications.push(

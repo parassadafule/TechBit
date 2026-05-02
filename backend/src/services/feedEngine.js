@@ -1,13 +1,17 @@
 const Post = require('../models/Post');
 const Trend = require('../models/Trend');
-const SemanticChunk = require('../models/SemanticChunk');
-const ragService = require('./ragService');
+const {
+  getEmbedding,
+  normalizeEmbeddingText,
+  DEFAULT_EMBEDDING_INPUT_LIMIT,
+} = require('../utils/embedding');
 const logger = require('../utils/logger');
 
 const MAX_CANDIDATES = 50;
 const MAX_POST_SCAN = 200;
 const MAX_TREND_SCAN = 100;
 const DIVERSITY_TAG_LIMIT = 2;
+const VECTOR_INDEX_NAME = process.env.MONGODB_ATLAS_VECTOR_SEARCH_INDEX || 'embedding_index';
 
 function normalizeText(value = '') {
   return String(value || '')
@@ -61,11 +65,10 @@ async function buildUserEmbedding(user = {}) {
   }
 
   try {
-    if (typeof ragService.embed === 'function') {
-      return await ragService.embed(preferenceText);
-    }
-
-    return await ragService.generateEmbedding(preferenceText);
+    return await getEmbedding(
+      normalizeEmbeddingText(preferenceText, DEFAULT_EMBEDDING_INPUT_LIMIT),
+      { maxLength: DEFAULT_EMBEDDING_INPUT_LIMIT },
+    );
   } catch (error) {
     logger.warn('Unable to build user embedding for personalized feed', {
       error: error.message,
@@ -102,41 +105,32 @@ async function getCandidatePostIdsFromVectorStore(userEmbedding = [], limit = MA
     return [];
   }
 
-  const hasVectorStore = await SemanticChunk.exists({
-    embedding: { $exists: true, $ne: [] },
-  });
+  try {
+    const candidatePosts = await Post.aggregate([
+      {
+        $vectorSearch: {
+          index: VECTOR_INDEX_NAME,
+          path: 'embedding',
+          queryVector: userEmbedding,
+          numCandidates: Math.max(limit * 20, 100),
+          limit,
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+        },
+      },
+    ]);
 
-  if (!hasVectorStore) {
+    return candidatePosts.map((post) => post._id?.toString()).filter(Boolean);
+  } catch (error) {
+    logger.warn('Feed vector search unavailable, falling back to broader post scan', {
+      error: error.message,
+      index: VECTOR_INDEX_NAME,
+    });
     return [];
   }
-
-  const chunks = await SemanticChunk.find({
-    embedding: { $exists: true, $ne: [] },
-    postId: { $exists: true, $ne: null },
-  })
-    .select('postId embedding')
-    .lean();
-
-  const rankedPostIds = [];
-  const seen = new Set();
-
-  chunks
-    .map((chunk) => ({
-      postId: chunk.postId?.toString?.() || null,
-      score: cosineSimilarity(userEmbedding, chunk.embedding || []),
-    }))
-    .filter((chunk) => chunk.postId && Number.isFinite(chunk.score))
-    .sort((left, right) => right.score - left.score)
-    .forEach((chunk) => {
-      if (seen.has(chunk.postId) || rankedPostIds.length >= limit) {
-        return;
-      }
-
-      seen.add(chunk.postId);
-      rankedPostIds.push(chunk.postId);
-    });
-
-  return rankedPostIds;
 }
 
 async function fetchCandidatePosts(options = {}) {

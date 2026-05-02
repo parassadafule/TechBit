@@ -192,10 +192,7 @@ ${context}
    - Emojis and hashtags  
    - Just copying first sentences
    - Vague statements without specifics
-7. **GOOD EXAMPLES:**
-   - "React Server Components shift rendering to the server, reducing bundle sizes and improving performance. Explains when to use RSCs vs traditional components with real-world trade-offs. Essential for optimizing large-scale React apps."
-   - "Novel async/await error handling pattern that catches race conditions most developers miss. Includes practical examples and performance implications. Reduces bugs in concurrent operations by 40%+ in production."
-   - "Database indexing strategies that consistently 10x query performance. Covers composite indexes, explain plans, and common mistakes. Real examples with 100K+ row datasets."
+
 
 ## OUTPUT
 Return ONLY the TL;DR text. No code blocks, no headers, no markdown formatting beyond bullet points. Create something that makes developers think 'I want to read this.'`;

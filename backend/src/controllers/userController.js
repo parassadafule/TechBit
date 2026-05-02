@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const Post = require('../models/Post');
-const LearningPath = require('../models/LearningPath');
+const { serializePosts } = require('../utils/postResponse');
 const logger = require('../utils/logger');
 
 
@@ -95,13 +95,14 @@ const getUserPosts = async (req, res) => {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .populate('userId', 'username email')
+        .populate('userId', 'username email avatarUrl')
+        .populate('commentsCount')
         .select('-embedding'),
       Post.countDocuments({ userId }),
     ]);
 
     res.json({
-      posts,
+      posts: serializePosts(posts, req.user?._id),
       pagination: {
         page,
         limit,

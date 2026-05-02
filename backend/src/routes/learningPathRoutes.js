@@ -1,20 +1,19 @@
 const express = require('express');
 const { ensureAuthenticated } = require('../middleware/auth');
-const { validate, validationRules } = require('../middleware/validator');
 const {
+  createLearningPath,
   getLearningPath,
-  regenerateLearningPath,
-  completePathItem,
+  completeLearningPathStep,
+  updateLearningPathFeedback,
 } = require('../controllers/learningPathController');
 
 const router = express.Router();
 
 router.use(ensureAuthenticated);
 
+router.post('/', createLearningPath);
 router.get('/', getLearningPath);
-
-router.post('/regenerate', validationRules.regenerateLearningPath, validate, regenerateLearningPath);
-
-router.post('/:pathId/complete/:step', completePathItem);
+router.patch('/:id/complete', completeLearningPathStep);
+router.patch('/:id/feedback', updateLearningPathFeedback);
 
 module.exports = router;

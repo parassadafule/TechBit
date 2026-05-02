@@ -1,12 +1,16 @@
 const Post = require('../models/Post');
 const { semanticSearch } = require('../services/searchService');
+const { serializePosts } = require('../utils/postResponse');
 const logger = require('../utils/logger');
 
 
 const searchPosts = async (req, res) => {
   try {
     const { q } = req.query;
-    const results = await semanticSearch(q, { limit: 3 });
+    const results = await semanticSearch(q, {
+      limit: 3,
+      currentUserId: req.user?._id,
+    });
 
     res.json({
       results,
@@ -31,7 +35,8 @@ const filterByTags = async (req, res) => {
     }
 
     const posts = await Post.find({ tags: { $all: tags } })
-      .populate('userId', 'username email')
+      .populate('userId', 'username email avatarUrl')
+      .populate('commentsCount')
       .select('-embedding')
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -40,7 +45,7 @@ const filterByTags = async (req, res) => {
     const total = await Post.countDocuments({ tags: { $all: tags } });
 
     res.json({
-      posts,
+      posts: serializePosts(posts, req.user?._id),
       pagination: {
         page,
         limit,
@@ -64,24 +69,11 @@ const getRelatedPosts = async (req, res) => {
       return res.status(404).json({ error: 'Post not found' });
     }
 
-    const relatedResults = await semanticSearch(`${post.title || ''}\n\n${post.content || ''}`, {
+    const relatedPosts = await semanticSearch(`${post.title || ''}\n\n${post.content || ''}`, {
       limit: 5,
       excludePostId: postId,
+      currentUserId: req.user?._id,
     });
-
-    const postIds = relatedResults.map((result) => result._id);
-
-    const fetchedPosts = await Post.find({ _id: { $in: postIds } })
-      .populate('userId', 'username email')
-      .select('-embedding -content');
-
-    const postMap = new Map(
-      fetchedPosts.map((relatedPost) => [relatedPost._id.toString(), relatedPost]),
-    );
-
-    const relatedPosts = postIds
-      .map((id) => postMap.get(id.toString()))
-      .filter(Boolean);
 
     res.json({ relatedPosts });
   } catch (error) {

@@ -123,6 +123,24 @@ async function generatePostTLDR(title, content, embedding, type) {
   );
 }
 
+async function generateTags(text) {
+  const prompt = `
+Generate 4 to 5 tags for the following content.
+Return ONLY comma-separated sinle worded tags.
+
+Content:
+${text}
+`;
+
+  const res = await ragService.generate(prompt);
+
+  return String(res || '')
+    .split(',')
+    .map(tag => tag.trim().toLowerCase())
+    .filter(Boolean)
+    .slice(0, 5);
+}
+
 
 async function createPost({
   title,
@@ -145,6 +163,14 @@ async function createPost({
   try {
     const { ragResult, embedding } = await generatePostMetadata(title, content, sourceUrl);
 
+    let generatedTags = [];
+    try {
+      generatedTags = await generateTags(content);
+    } catch (err) {
+      logger.warn('Tag generation failed, continuing without generated tags', { error: err.message });
+      generatedTags = [];
+    }
+
     let tldr = '';
     try {
       tldr = await generatePostTLDR(title, content, embedding, type);
@@ -158,6 +184,7 @@ async function createPost({
     const allTags = Array.from(new Set([
       ...tags.filter(t => typeof t === 'string' && t.trim()),
       ...ragResult.tags.filter(t => typeof t === 'string' && t.trim()),
+      ...generatedTags.filter(t => typeof t === 'string' && t.trim()),
     ]));
 
     const postData = {

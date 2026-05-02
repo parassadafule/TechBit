@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Heart, MessageCircle, Share2, MoreHorizontal, ExternalLink, Sparkles } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -46,15 +46,19 @@ const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
       setIsLiked(isLiked);
       setLikesCount(likesCount);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['posts']);
+    onSuccess: (data) => {
+      setIsLiked(Boolean(data?.likedByUser));
+      setLikesCount(Number(data?.likes ?? likesCount));
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['post', post._id] });
     },
   });
 
   const shareMutation = useMutation({
     mutationFn: () => postAPI.sharePost(post._id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['posts']);
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['post', post._id] });
     },
   });
 
@@ -62,11 +66,16 @@ const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
     mutationFn: () => postAPI.deletePost(post._id),
     onSuccess: () => {
       setIsMenuOpen(false);
-      queryClient.invalidateQueries(['posts']);
-      queryClient.invalidateQueries(['posts', 'user', authorId]);
-      queryClient.invalidateQueries(['profile', authorId]);
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['posts', 'user', authorId] });
+      queryClient.invalidateQueries({ queryKey: ['profile', authorId] });
     },
   });
+
+  useEffect(() => {
+    setIsLiked(post?.likedByUser || false);
+    setLikesCount(post?.likes || 0);
+  }, [post?.likedByUser, post?.likes]);
 
   const handleDeletePost = () => {
     const shouldDelete = window.confirm('Delete this post? This action cannot be undone.');

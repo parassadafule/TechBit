@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const { getPersonalizedFeed } = require('../services/feedEngine');
+const { serializePosts } = require('../utils/postResponse');
 const logger = require('../utils/logger');
 
 const getFeed = async (req, res) => {
@@ -19,9 +20,11 @@ const getFeed = async (req, res) => {
       tags,
     });
 
+    const serializedFeed = serializePosts(rankedFeed, req.user?._id);
+
     res.json({
-      posts: rankedFeed,
-      count: rankedFeed.length,
+      posts: serializedFeed,
+      count: serializedFeed.length,
     });
   } catch (error) {
     logger.error('Error generating feed:', error);

@@ -2,6 +2,7 @@ const Post = require('../models/Post');
 const User = require('../models/User');
 const logger = require('../utils/logger');
 const { emitPostCreated } = require('../socket/socketHandler');
+const { serializePost, serializePosts } = require('../utils/postResponse');
 const {
   createPost,
   createPostFromUrl,
@@ -152,7 +153,8 @@ const getFeed = async (req, res) => {
           .sort(sortOptions)
           .skip(skip)
           .limit(limit)
-          .populate('userId', 'username email')
+          .populate('userId', 'username email avatarUrl')
+          .populate('commentsCount')
           .select('-embedding');
       }
     } else {
@@ -164,7 +166,8 @@ const getFeed = async (req, res) => {
         .sort(sortOptions)
         .skip(skip)
         .limit(limit)
-        .populate('userId', 'username email')
+        .populate('userId', 'username email avatarUrl')
+        .populate('commentsCount')
         .select('-embedding');
     }
 
@@ -181,7 +184,7 @@ const getFeed = async (req, res) => {
     ]);
 
     res.json({
-      posts,
+      posts: serializePosts(posts, req.user?._id),
       pagination: {
         page,
         limit,
@@ -204,7 +207,8 @@ const getPost = async (req, res) => {
     const postId = req.params.id;
 
     const post = await Post.findById(postId)
-      .populate('userId', 'username email')
+      .populate('userId', 'username email avatarUrl')
+      .populate('commentsCount')
       .select('-embedding');
 
     if (!post) {
@@ -224,7 +228,7 @@ const getPost = async (req, res) => {
       await user.save();
     }
 
-    res.json(post);
+    res.json(serializePost(post, req.user?._id));
   } catch (error) {
     logger.error('Error getting post:', error);
     res.status(500).json({ error: 'Error fetching post' });
@@ -281,26 +285,48 @@ const deletePost = async (req, res) => {
 const likePost = async (req, res) => {
   try {
     const postId = req.params.id;
+    const userId = req.user._id;
 
-    const post = await Post.findByIdAndUpdate(
-      postId,
-      { $inc: { likes: 1 } },
-      { new: true }
-    );
+    const post = await Post.findById(postId).select('likes likedBy userId');
 
     if (!post) {
       return res.status(404).json({ error: 'Post not found' });
     }
 
-    const user = await User.findById(req.user._id);
-    user.activityHistory.push({
-      action: 'like',
-      postId: post._id,
-      timestamp: new Date(),
-    });
-    await user.save();
+    if (!Array.isArray(post.likedBy)) {
+      post.likedBy = [];
+    }
 
-    res.json({ likes: post.likes });
+    const alreadyLiked = post.likedBy.some(
+      (likedUserId) => likedUserId.toString() === userId.toString(),
+    );
+
+    if (alreadyLiked) {
+      post.likedBy = post.likedBy.filter(
+        (likedUserId) => likedUserId.toString() !== userId.toString(),
+      );
+      post.likes = Math.max((post.likes || 0) - 1, 0);
+    } else {
+      post.likedBy.push(userId);
+      post.likes = (post.likes || 0) + 1;
+    }
+
+    await post.save();
+
+    const user = await User.findById(userId);
+    if (user && !alreadyLiked) {
+      user.activityHistory.push({
+        action: 'like',
+        postId: post._id,
+        timestamp: new Date(),
+      });
+      await user.save();
+    }
+
+    res.json({
+      likes: post.likes,
+      likedByUser: !alreadyLiked,
+    });
   } catch (error) {
     logger.error('Error liking post:', error);
     res.status(500).json({ error: 'Error liking post' });

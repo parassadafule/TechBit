@@ -18,7 +18,9 @@ const CommentThread = ({ postId, comments, isLoading }) => {
   const createMutation = useMutation({
     mutationFn: (text) => commentAPI.createComment(postId, text),
     onSuccess: () => {
-      queryClient.invalidateQueries(['comments', postId]);
+      queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+      queryClient.invalidateQueries({ queryKey: ['post', postId] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
       setNewComment('');
     },
   });
@@ -26,7 +28,7 @@ const CommentThread = ({ postId, comments, isLoading }) => {
   const updateMutation = useMutation({
     mutationFn: ({ commentId, text }) => commentAPI.updateComment(commentId, text),
     onSuccess: () => {
-      queryClient.invalidateQueries(['comments', postId]);
+      queryClient.invalidateQueries({ queryKey: ['comments', postId] });
       setEditingId(null);
       setEditText('');
     },
@@ -35,7 +37,9 @@ const CommentThread = ({ postId, comments, isLoading }) => {
   const deleteMutation = useMutation({
     mutationFn: (commentId) => commentAPI.deleteComment(commentId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['comments', postId]);
+      queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+      queryClient.invalidateQueries({ queryKey: ['post', postId] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
     },
   });
 

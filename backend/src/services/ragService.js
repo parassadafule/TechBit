@@ -116,6 +116,10 @@ class RAGService {
     }
   }
 
+  async embed(text) {
+    return this.generateEmbedding(text);
+  }
+
   
   async chunkAndEmbed(content, metadata = {}) {
     try {
@@ -476,54 +480,20 @@ Answer:`;
     }
   }
 
-  
-  async generateLearningPath(userProfile, posts) {
+  async generate(prompt) {
     try {
-      const recentActivity = (userProfile.activityHistory || [])
-        .slice(-5)
-        .map((item) => item.action)
-        .join(', ');
-
-      const postsContext = posts
-        .map((post, idx) => `[${idx + 1}] Title: ${post.title}\nTags: ${post.tags.join(', ')}\nType: ${post.type}`)
-        .join('\n\n');
-
-      const prompt = `Generate a structured learning roadmap for a developer with the following profile:
-
-Skill Level: ${userProfile.goals.skillLevel}
-Career Goal: ${userProfile.goals.career}
-Interests: ${userProfile.interests.join(', ')}
-Recent Activity: ${recentActivity || 'None yet'}
-
-Available Resources:
-${postsContext}
-
-Create a 5-step learning path by:
-1. Sequencing resources from beginner to advanced
-2. Explaining the reason for each step
-3. Ensuring logical progression
-
-Format each step as:
-Step X: [Resource Number] - Reason: [Why this step]`;
-
-      const response = await this.llm.call(prompt,{
-          headers: {
-            'ngrok-skip-browser-warning': 'true',
-            'User-Agent': 'TechBit-Backend/1.0',
-          }
+      const response = await this.llm.call(prompt, {
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+          'User-Agent': 'TechBit-Backend/1.0',
+        },
       });
-
-      const steps = this.parseLearningPathResponse(response, posts);
-
-      return steps;
+      return typeof response === 'string' ? response : (response?.text || String(response));
     } catch (error) {
       if (this.isModelUnavailableError(error)) {
-        logger.warn('LLM unavailable for learning path. Falling back to sequential recommendation.', {
-          message: error.message,
-        });
-        return this.buildFallbackLearningPath(posts);
+        logger.warn('LLM unavailable for generate, returning empty string', { message: error.message });
+        return '';
       }
-      logger.error('Error generating learning path:', error);
       throw error;
     }
   }
@@ -579,18 +549,6 @@ Step X: [Resource Number] - Reason: [Why this step]`;
     return dot / (Math.sqrt(normA) * Math.sqrt(normB));
   }
 
-  buildFallbackLearningPath(posts = []) {
-    return posts.slice(0, 5).map((post, index) => ({
-      step: index + 1,
-      postId: post._id,
-      type: post.type,
-      reason: index === 0
-        ? 'Start with this resource to build core context.'
-        : 'Continue with this resource as the next practical step in your roadmap.',
-    }));
-  }
-
-  
   extractTags(content) {
     const keywords = [
       'react', 'vue', 'angular', 'node', 'express', 'mongodb', 'sql',
@@ -722,40 +680,6 @@ Step X: [Resource Number] - Reason: [Why this step]`;
       || message.includes('timed out');
   }
 
-  
-  parseLearningPathResponse(response, posts) {
-    const steps = [];
-    const lines = response.split('\n');
-
-    let stepNumber = 1;
-    for (const line of lines) {
-      const stepMatch = line.match(/Step\s+(\d+):\s*\[?(\d+)\]?\s*-?\s*Reason:\s*(.+)/i);
-      if (stepMatch) {
-        const resourceIdx = parseInt(stepMatch[2]) - 1;
-        if (resourceIdx >= 0 && resourceIdx < posts.length) {
-          steps.push({
-            step: stepNumber++,
-            postId: posts[resourceIdx]._id,
-            type: posts[resourceIdx].type,
-            reason: stepMatch[3].trim(),
-          });
-        }
-      }
-    }
-
-    if (steps.length === 0) {
-      posts.slice(0, 5).forEach((post, idx) => {
-        steps.push({
-          step: idx + 1,
-          postId: post._id,
-          type: post.type,
-          reason: 'Recommended based on your interests and skill level',
-        });
-      });
-    }
-
-    return steps;
-  }
 }
 
 module.exports = new RAGService();

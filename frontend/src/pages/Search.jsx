@@ -24,18 +24,13 @@ const Search = () => {
         type: selectedType,
         semantic,
       }),
-    enabled: !!searchQuery || selectedTags.length > 0 || !!selectedType,
+    enabled: true,
   });
 
   const handleSearch = (e) => {
     e.preventDefault();
     setSearchQuery(query);
   };
-
-  const popularTags = [
-    'react', 'javascript', 'typescript', 'python', 'ai', 
-    'machine-learning', 'web-dev', 'nodejs', 'nextjs', 'tailwind'
-  ];
 
   const contentTypes = [
     { value: '', label: 'All' },
@@ -114,26 +109,6 @@ const Search = () => {
                 }`}
               >
                 {label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {}
-        <div>
-          <h3 className="text-sm font-semibold text-gray-900 mb-2">Popular Tags</h3>
-          <div className="flex flex-wrap gap-2">
-            {popularTags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => toggleTag(tag)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  selectedTags.includes(tag)
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                #{tag}
               </button>
             ))}
           </div>

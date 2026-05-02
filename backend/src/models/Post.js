@@ -51,6 +51,12 @@ const postSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    likedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
     shares: {
       type: Number,
       default: 0,
@@ -67,6 +73,7 @@ postSchema.index({ type: 1, createdAt: -1 }); // Compound for feed queries
 postSchema.index({ userId: 1, createdAt: -1 }); // User posts with date sorting
 postSchema.index({ createdAt: -1 }); // Global date sorting
 postSchema.index({ likes: -1, shares: -1 }); // Trending posts
+postSchema.index({ likedBy: 1 });
 
 
 postSchema.virtual('commentsCount', {

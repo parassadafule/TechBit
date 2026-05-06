@@ -7,7 +7,6 @@ const { serializePost, serializePosts } = require('../utils/postResponse');
 const {
   createPost,
   createPostFromUrl,
-  updatePost: updatePostService,
 } = require('../services/postService');
 
 
@@ -123,7 +122,7 @@ const getFeed = async (req, res) => {
         if (sort === 'trending') {
           pipeline.push({
             $addFields: {
-              trendingScore: { $add: ['$likes', '$shares'] },
+              trendingScore: '$likes',
             },
           });
           pipeline.push({ $sort: { trendingScore: -1, relevanceScore: -1, createdAt: -1 } });
@@ -162,7 +161,7 @@ const getFeed = async (req, res) => {
       } else {
         let sortOptions = { createdAt: -1 };
         if (sort === 'trending') {
-          sortOptions = { likes: -1, shares: -1, createdAt: -1 };
+          sortOptions = { likes: -1, createdAt: -1 };
         }
         posts = await Post.find(query)
           .sort(sortOptions)
@@ -175,7 +174,7 @@ const getFeed = async (req, res) => {
     } else {
       let sortOptions = { createdAt: -1 };
       if (sort === 'trending') {
-        sortOptions = { likes: -1, shares: -1, createdAt: -1 };
+        sortOptions = { likes: -1, createdAt: -1 };
       }
       posts = await Post.find(query)
         .sort(sortOptions)
@@ -249,28 +248,6 @@ const getPost = async (req, res) => {
     res.status(500).json({ error: 'Error fetching post' });
   }
 };
-
-
-const updatePostHandler = async (req, res) => {
-  try {
-    const postId = req.params.id;
-    const userId = req.user._id;
-
-    const post = await updatePostService(postId, userId, req.body);
-    logger.info('Post updated', { postId, userId });
-    res.json(post);
-  } catch (error) {
-    const statusCode = error.statusCode || 500;
-    logger.error('Error updating post', {
-      error: error.message,
-      statusCode,
-    });
-    res.status(statusCode).json({
-      error: error.message,
-    });
-  }
-};
-
 
 const deletePost = async (req, res) => {
   try {
@@ -364,11 +341,7 @@ const sharePost = async (req, res) => {
     const postId = req.params.id;
     const userId = req.user._id;
 
-    const post = await Post.findByIdAndUpdate(
-      postId,
-      { $inc: { shares: 1 } },
-      { new: true }
-    );
+    const post = await Post.findById(postId);
 
     if (!post) {
       return res.status(404).json({ error: 'Post not found' });
@@ -392,7 +365,11 @@ const sharePost = async (req, res) => {
       emitNotification(post.userId.toString(), notification);
     }
 
-    res.json({ shares: post.shares });
+    const baseUrl = (process.env.FRONTEND_URL || req.get('origin') || `${req.protocol}://${req.get('host')}`)
+      .replace(/\/$/, '');
+    const shareUrl = `${baseUrl}/post/${post._id}`;
+
+    res.json({ shareUrl });
   } catch (error) {
     logger.error('Error sharing post:', error);
     res.status(500).json({ error: 'Error sharing post' });
@@ -404,7 +381,6 @@ module.exports = {
   createPost: createPostHandler,
   getFeed,
   getPost,
-  updatePost: updatePostHandler,
   deletePost,
   likePost,
   sharePost,

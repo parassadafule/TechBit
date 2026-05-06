@@ -13,8 +13,6 @@ import { formatTimeAgo } from '../utils/date';
 import { extractDomain, getPostTypeColor, getPostTypeIcon } from '../utils/helpers';
 import { useAuth } from '../contexts/AuthContext';
 
-
-
 const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
   const { user } = useAuth();
   const { pathname } = useLocation();
@@ -56,9 +54,30 @@ const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
 
   const shareMutation = useMutation({
     mutationFn: () => postAPI.sharePost(post._id),
-    onSuccess: () => {
+    onSuccess: async (data) => {
+      const shareUrl = data?.shareUrl || shareLink;
       queryClient.invalidateQueries({ queryKey: ['posts'] });
       queryClient.invalidateQueries({ queryKey: ['post', post._id] });
+
+      try {
+        if (navigator.share) {
+          await navigator.share({
+            title: post.title,
+            text: post.tldr || post.title,
+            url: shareUrl,
+          });
+          return;
+        }
+      } catch (error) {
+        // If share fails, fall back to clipboard.
+      }
+
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        window.alert('Share link copied to clipboard.');
+      } catch (error) {
+        window.prompt('Copy this link:', shareUrl);
+      }
     },
   });
 
@@ -76,6 +95,30 @@ const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
     setIsLiked(post?.likedByUser || false);
     setLikesCount(post?.likes || 0);
   }, [post?.likedByUser, post?.likes]);
+
+  const shareLink = `${window.location.origin}/post/${post._id}`;
+
+  const shareByLink = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: post.title,
+          text: post.tldr || post.title,
+          url: shareLink,
+        });
+        return;
+      }
+    } catch (error) {
+      // If share fails, fall back to clipboard.
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      window.alert('Share link copied to clipboard.');
+    } catch (error) {
+      window.prompt('Copy this link:', shareLink);
+    }
+  };
 
   const handleDeletePost = () => {
     const shouldDelete = window.confirm('Delete this post? This action cannot be undone.');
@@ -239,11 +282,10 @@ const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
           </Link>
 
           <button
-            onClick={() => shareMutation.mutate()}
+            onClick={() => (user?._id ? shareMutation.mutate() : shareByLink())}
             className="flex items-center space-x-2 text-gray-500 hover:text-green-600"
           >
             <Share2 size={20} />
-            <span className="text-sm font-medium">{post.shares || 0}</span>
           </button>
         </div>
       </div>

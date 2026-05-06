@@ -6,13 +6,15 @@ const {
   uploadPost,
   createPost,
   getPost,
-  updatePost,
   deletePost,
   likePost,
   sharePost,
 } = require('../controllers/postController');
 
 const router = express.Router();
+
+// Public access for shared links
+router.get('/public/:id', validationRules.mongoId, validate, getPost);
 
 router.use(ensureAuthenticated);
 
@@ -23,8 +25,6 @@ router.post('/', validationRules.createPost, validate, createPost);
 router.get('/feed', getRankedFeed);
 
 router.get('/:id', validationRules.mongoId, validate, getPost);
-
-router.put('/:id', validationRules.mongoId, validate, updatePost);
 
 router.delete('/:id', validationRules.mongoId, validate, deletePost);
 

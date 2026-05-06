@@ -57,10 +57,6 @@ const postSchema = new mongoose.Schema(
         ref: 'User',
       },
     ],
-    shares: {
-      type: Number,
-      default: 0,
-    },
   },
   {
     timestamps: true,
@@ -72,7 +68,7 @@ postSchema.index({ tags: 1 }); // Multikey index for tag filtering
 postSchema.index({ type: 1, createdAt: -1 }); // Compound for feed queries
 postSchema.index({ userId: 1, createdAt: -1 }); // User posts with date sorting
 postSchema.index({ createdAt: -1 }); // Global date sorting
-postSchema.index({ likes: -1, shares: -1 }); // Trending posts
+postSchema.index({ likes: -1 }); // Trending posts
 postSchema.index({ likedBy: 1 });
 
 

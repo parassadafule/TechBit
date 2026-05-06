@@ -7,19 +7,21 @@ import PostCard from '../components/PostCard';
 import CommentThread from '../components/CommentThread';
 import Spinner from '../components/ui/Spinner';
 import Button from '../components/ui/Button';
+import { useAuth } from '../contexts/AuthContext';
 
 const PostDetail = () => {
   const { postId } = useParams();
+  const { isAuthenticated } = useAuth();
 
   const { data: post, isLoading: postLoading } = useQuery({
     queryKey: ['post', postId],
-    queryFn: () => postAPI.getPost(postId),
+    queryFn: () => (isAuthenticated ? postAPI.getPost(postId) : postAPI.getPublicPost(postId)),
   });
 
   const { data: commentsData, isLoading: commentsLoading } = useQuery({
     queryKey: ['comments', postId],
     queryFn: () => commentAPI.getComments(postId, 1, 50),
-    enabled: !!postId,
+    enabled: !!postId && isAuthenticated,
   });
 
   if (postLoading) {
@@ -44,16 +46,23 @@ const PostDetail = () => {
       {post && <PostCard post={post} showFullContent />}
 
       {}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">
-          Comments ({commentsData?.comments?.length || 0})
-        </h2>
-        <CommentThread
-          postId={postId}
-          comments={commentsData?.comments || []}
-          isLoading={commentsLoading}
-        />
-      </div>
+      {isAuthenticated ? (
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-6">
+            Comments ({commentsData?.comments?.length || 0})
+          </h2>
+          <CommentThread
+            postId={postId}
+            comments={commentsData?.comments || []}
+            isLoading={commentsLoading}
+          />
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Comments</h2>
+          <p className="text-gray-600">Log in to view and add comments.</p>
+        </div>
+      )}
     </div>
   );
 };

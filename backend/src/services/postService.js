@@ -408,92 +408,9 @@ Generate the post now:`;
   };
 }
 
-
-async function updatePost(postId, userId, updates) {
-  logger.info('Updating post', { postId, userId });
-
-  try {
-    const post = await Post.findById(postId);
-    if (!post) {
-      const error = new Error('Post not found');
-      error.statusCode = 404;
-      throw error;
-    }
-
-    if (post.userId.toString() !== userId.toString()) {
-      const error = new Error('You do not have permission to update this post');
-      error.statusCode = 403;
-      throw error;
-    }
-
-    const { title, content, tags, type } = updates;
-    if (title !== undefined || content !== undefined || type !== undefined) {
-      const validationInput = {
-        title: title !== undefined ? title : post.title,
-        content: content !== undefined ? content : post.content,
-        type: type !== undefined ? type : post.type,
-      };
-      const validationError = validatePostInput(validationInput);
-      if (validationError) {
-        const error = new Error(validationError);
-        error.statusCode = 400;
-        throw error;
-      }
-    }
-
-    if (title !== undefined) post.title = title;
-    if (type !== undefined) post.type = type;
-    if (tags !== undefined) {
-      post.tags = tags.filter(t => typeof t === 'string' && t.trim());
-    }
-
-    if (content !== undefined) {
-      post.content = content;
-      try {
-        const { ragResult, embedding } = await generatePostMetadata(post.title, content, post.blogUrl);
-        post.embedding = embedding;
-        if (ragResult.summary) {
-          post.summary = ragResult.summary;
-        }
-        const tldr = await generatePostTLDR(post.title, content, embedding, post.type);
-        post.tldr = tldr;
-      } catch (error) {
-        logger.warn('Metadata regeneration failed during post update, post still will be updated', {
-          error: error.message,
-        });
-      }
-
-      queuePostIndexing({
-        postId: post._id.toString(),
-        title: post.title,
-        content: post.content,
-        url: post.blogUrl,
-      });
-    }
-
-    await post.save();
-    logger.info('Post updated successfully', { postId, userId });
-
-    return post.toObject({ transform: (doc, ret) => {
-      delete ret.embedding;
-      return ret;
-    }});
-  } catch (error) {
-    if (!error.statusCode) {
-      logger.error('Unexpected error updating post', {
-        error: error.message,
-        stack: error.stack,
-      });
-      error.statusCode = 500;
-    }
-    throw error;
-  }
-}
-
 module.exports = {
   createPost,
   createPostFromUrl,
-  updatePost,
   generateContentFromUrl,
   generateTitleFromUrl,
 };

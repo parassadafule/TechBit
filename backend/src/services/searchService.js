@@ -109,7 +109,7 @@ async function findSimilarPostsByEmbedding(embedding = [], options = {}) {
   })
     .populate('userId', 'username email avatarUrl')
     .populate('commentsCount')
-    .select('userId title content tldr tags type blogUrl createdAt likes likedBy shares embedding')
+    .select('userId title content tldr tags type blogUrl createdAt likes likedBy embedding')
     .select('+embedding')
     .lean();
 
@@ -176,7 +176,7 @@ async function semanticSearch(query, options = {}) {
   return Post.find({ $text: { $search: normalizedQuery } })
     .populate('userId', 'username email avatarUrl')
     .populate('commentsCount')
-    .select('userId title content tldr tags type blogUrl createdAt likes likedBy shares')
+    .select('userId title content tldr tags type blogUrl createdAt likes likedBy')
     .select({ score: { $meta: 'textScore' } })
     .sort({ score: { $meta: 'textScore' } })
     .limit(limit)

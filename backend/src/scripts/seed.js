@@ -91,7 +91,6 @@ const seedData = async () => {
         tags: ['react', 'javascript', 'hooks', 'frontend', 'web-development'],
         type: 'blog',
         likes: 45,
-        shares: 12,
       },
       {
         userId: users[1]._id,
@@ -102,7 +101,6 @@ const seedData = async () => {
         tags: ['ai', 'rag', 'nlp', 'langchain', 'python', 'llm'],
         type: 'blog',
         likes: 89,
-        shares: 34,
       },
       {
         userId: users[2]._id,
@@ -113,7 +111,6 @@ const seedData = async () => {
         tags: ['docker', 'kubernetes', 'devops', 'containers', 'deployment'],
         type: 'blog',
         likes: 67,
-        shares: 23,
       },
       {
         userId: users[0]._id,
@@ -124,7 +121,6 @@ const seedData = async () => {
         tags: ['node.js', 'express', 'api', 'backend', 'javascript', 'rest'],
         type: 'blog',
         likes: 52,
-        shares: 18,
       },
       {
         userId: users[1]._id,
@@ -135,7 +131,6 @@ const seedData = async () => {
         tags: ['ai', 'llm', 'ollama', 'privacy', 'python', 'local-ai'],
         type: 'blog',
         likes: 101,
-        shares: 42,
       },
       {
         userId: users[3]._id,
@@ -146,7 +141,6 @@ const seedData = async () => {
         tags: ['tailwind', 'css', 'frontend', 'ui', 'web-design'],
         type: 'blog',
         likes: 73,
-        shares: 28,
       },
       {
         userId: users[4]._id,
@@ -157,7 +151,6 @@ const seedData = async () => {
         tags: ['graphql', 'rest', 'api', 'backend', 'architecture'],
         type: 'blog',
         likes: 58,
-        shares: 15,
       },
       
       {
@@ -169,7 +162,6 @@ const seedData = async () => {
         tags: ['react', 'javascript', 'resources', 'awesome-list', 'frontend'],
         type: 'repo',
         likes: 156,
-        shares: 67,
       },
       {
         userId: users[2]._id,
@@ -180,7 +172,6 @@ const seedData = async () => {
         tags: ['kubernetes', 'devops', 'deployment', 'k8s', 'infrastructure'],
         type: 'repo',
         likes: 92,
-        shares: 38,
       },
       {
         userId: users[1]._id,
@@ -191,7 +182,6 @@ const seedData = async () => {
         tags: ['langchain', 'ai', 'python', 'rag', 'chatbot', 'llm'],
         type: 'repo',
         likes: 201,
-        shares: 89,
       },
       
       {
@@ -203,7 +193,6 @@ const seedData = async () => {
         tags: ['full-stack', 'react', 'node.js', 'mongodb', 'tutorial', 'course'],
         type: 'video',
         likes: 312,
-        shares: 145,
       },
       {
         userId: users[1]._id,
@@ -214,7 +203,6 @@ const seedData = async () => {
         tags: ['ollama', 'ai', 'llm', 'tutorial', 'python', 'chatbot'],
         type: 'video',
         likes: 267,
-        shares: 98,
       },
       
       {
@@ -226,7 +214,6 @@ const seedData = async () => {
         tags: ['podcast', 'web-development', 'ai', 'career', 'technology'],
         type: 'podcast',
         likes: 89,
-        shares: 34,
       },
       {
         userId: users[2]._id,
@@ -237,7 +224,6 @@ const seedData = async () => {
         tags: ['podcast', 'devops', 'cloud', 'kubernetes', 'infrastructure'],
         type: 'podcast',
         likes: 76,
-        shares: 29,
       },
     ];
 

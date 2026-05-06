@@ -75,6 +75,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
+      <Route path="/post/:postId" element={<PostDetail />} />
       <Route path="/login" element={<Login />} />
       <Route path="/dashboard" element={<DashboardCallback />} />
 

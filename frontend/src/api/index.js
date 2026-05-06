@@ -71,6 +71,11 @@ export const postAPI = {
     return response.data;
   },
 
+  getPublicPost: async (postId) => {
+    const response = await api.get(`/posts/public/${postId}`);
+    return response.data;
+  },
+
   createPost: async (data) => {
     const response = await api.post('/posts', data);
     return response.data;
@@ -78,11 +83,6 @@ export const postAPI = {
 
   uploadPost: async (url, type) => {
     const response = await api.post('/posts/upload', { url, type });
-    return response.data;
-  },
-
-  updatePost: async (postId, data) => {
-    const response = await api.put(`/posts/${postId}`, data);
     return response.data;
   },
 

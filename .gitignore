@@ -27,6 +27,7 @@ coverage
 !.env.*.example
 
 TechBit (Report).pdf
+docs
 
 package-lock.json
 yarn.lock

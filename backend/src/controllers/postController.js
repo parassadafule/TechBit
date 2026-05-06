@@ -1,7 +1,8 @@
 const Post = require('../models/Post');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 const logger = require('../utils/logger');
-const { emitPostCreated } = require('../socket/socketHandler');
+const { emitNotification, emitPostCreated } = require('../socket/socketHandler');
 const { serializePost, serializePosts } = require('../utils/postResponse');
 const {
   createPost,
@@ -24,6 +25,13 @@ const uploadPost = async (req, res) => {
 
     const post = await createPostFromUrl({ url, type, userId });
     logger.info('Post created from URL', { postId: post._id, userId });
+    const notification = await Notification.create({
+      userId,
+      type: 'new_post',
+      message: `Your post "${post.title}" was published successfully`,
+      relatedId: post._id,
+    });
+    emitNotification(userId.toString(), notification);
     emitPostCreated(userId.toString(), post);
     res.status(201).json(post);
   } catch (error) {
@@ -55,6 +63,13 @@ const createPostHandler = async (req, res) => {
     });
 
     logger.info('Post created manually', { postId: post._id, userId });
+    const notification = await Notification.create({
+      userId,
+      type: 'new_post',
+      message: `Your post "${post.title}" was published successfully`,
+      relatedId: post._id,
+    });
+    emitNotification(userId.toString(), notification);
     emitPostCreated(userId.toString(), post);
     res.status(201).json(post);
   } catch (error) {
@@ -323,6 +338,16 @@ const likePost = async (req, res) => {
       await user.save();
     }
 
+    if (!alreadyLiked && post.userId.toString() !== userId.toString()) {
+      const notification = await Notification.create({
+        userId: post.userId,
+        type: 'like',
+        message: `${req.user.username} liked your post`,
+        relatedId: post._id,
+      });
+      emitNotification(post.userId.toString(), notification);
+    }
+
     res.json({
       likes: post.likes,
       likedByUser: !alreadyLiked,
@@ -337,6 +362,7 @@ const likePost = async (req, res) => {
 const sharePost = async (req, res) => {
   try {
     const postId = req.params.id;
+    const userId = req.user._id;
 
     const post = await Post.findByIdAndUpdate(
       postId,
@@ -348,13 +374,23 @@ const sharePost = async (req, res) => {
       return res.status(404).json({ error: 'Post not found' });
     }
 
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(userId);
     user.activityHistory.push({
       action: 'share',
       postId: post._id,
       timestamp: new Date(),
     });
     await user.save();
+
+    if (post.userId.toString() !== userId.toString()) {
+      const notification = await Notification.create({
+        userId: post.userId,
+        type: 'share',
+        message: `${req.user.username} shared your post`,
+        relatedId: post._id,
+      });
+      emitNotification(post.userId.toString(), notification);
+    }
 
     res.json({ shares: post.shares });
   } catch (error) {

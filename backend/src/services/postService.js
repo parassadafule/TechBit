@@ -123,13 +123,16 @@ async function generatePostTLDR(title, content, embedding, type) {
   );
 }
 
-async function generateTags(text) {
-  const prompt = `
-Generate 4 to 5 tags for the following content.
-Return ONLY comma-separated sinle worded tags.
+async function generateTags(content) {
+  const prompt = `You are a helpful assistant.
+
+STRICT RULES:
+- Generate 4 to 5 tags for the following content.
+- Return ONLY comma-separated sinle worded tags.
+- Tags should be relevant, specific, and useful for categorization.
 
 Content:
-${text}
+${content}
 `;
 
   const res = await ragService.generate(prompt);

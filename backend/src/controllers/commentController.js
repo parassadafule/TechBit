@@ -1,6 +1,7 @@
 const Comment = require('../models/Comment');
 const Post = require('../models/Post');
 const Notification = require('../models/Notification');
+const { emitNotification, emitNewComment } = require('../socket/socketHandler');
 const logger = require('../utils/logger');
 
 const getComments = async (req, res) => {
@@ -53,13 +54,17 @@ const createComment = async (req, res) => {
     await comment.populate('userId', 'username email');
 
     if (post.userId.toString() !== userId.toString()) {
-      await Notification.create({
+      const notification = await Notification.create({
         userId: post.userId,
         type: 'comment',
         message: `${req.user.username} commented on your post`,
         relatedId: post._id,
       });
+
+      emitNotification(post.userId.toString(), notification);
     }
+
+    emitNewComment(postId, comment);
 
     logger.info(`Comment created on post ${postId} by user ${userId}`);
 

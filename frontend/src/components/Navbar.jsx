@@ -1,13 +1,43 @@
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Search, TrendingUp, BookOpen, MessageSquare, Bell, LogOut } from 'lucide-react';
+import { notificationAPI } from '../api';
 import { useAuth } from '../contexts/AuthContext';
+import { useSocket } from '../contexts/SocketContext';
 import Avatar from './ui/Avatar';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const socket = useSocket();
+  const queryClient = useQueryClient();
+
+  const { data: notificationData } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: () => notificationAPI.getNotifications(1, 20),
+  });
+
+  useEffect(() => {
+    if (!socket) {
+      return undefined;
+    }
+
+    const refreshNotifications = () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    };
+
+    socket.on('notification', refreshNotifications);
+
+    return () => {
+      socket.off('notification', refreshNotifications);
+    };
+  }, [socket, queryClient]);
 
   const isActive = (path) => location.pathname === path;
+  const unreadCount = notificationData?.unreadCount
+    ?? notificationData?.notifications?.filter((notification) => !notification.read).length
+    ?? 0;
 
   const navLinks = [
     { path: '/app', icon: Home, label: 'Feed' },
@@ -54,8 +84,11 @@ const Navbar = () => {
               className="relative p-2 text-gray-600 hover:bg-gray-50 rounded-lg"
             >
               <Bell size={20} />
-              {}
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              {unreadCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
             </Link>
 
             <Link

@@ -162,7 +162,7 @@ function buildTLDRPrompt(title, content, context, type) {
   return `You are summarizing content into a TLDR.
 
 STRICT RULES:
-- Generate 4 to 5 bullet points
+- Generate 3 to 5 bullet points according to length of content.
 - Each bullet must be 1 concise sentence
 - Each bullet should represent a unique key idea
 - Rewrite completely (no copying)

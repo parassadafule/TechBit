@@ -3,10 +3,23 @@ const logger = require('../utils/logger');
 
 let io;
 
+function buildAllowedOrigins() {
+  return [
+    process.env.FRONTEND_URL,
+    ...(process.env.ALLOWED_ORIGINS || '').split(','),
+    'http://localhost:5173',
+    'http://localhost:3000',
+  ]
+    .map((origin) => String(origin || '').trim())
+    .filter(Boolean);
+}
+
 function initializeSocket(server) {
+  const allowedOrigins = buildAllowedOrigins();
+
   io = socketIO(server, {
     cors: {
-      origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+      origin: allowedOrigins,
       methods: ['GET', 'POST'],
       credentials: true,
     },

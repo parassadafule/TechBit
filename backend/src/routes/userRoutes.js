@@ -8,6 +8,8 @@ const {
   getActivityHistory,
   addActivity,
   getSuggestedUsers,
+  followUser,
+  unfollowUser,
 } = require('../controllers/userController');
 
 const router = express.Router();
@@ -15,6 +17,10 @@ const router = express.Router();
 router.use(ensureAuthenticated);
 
 router.get('/profile/:id?', getProfile);
+
+router.post('/:id/follow', followUser);
+
+router.delete('/:id/follow', unfollowUser);
 
 router.get('/:id/posts', getUserPosts);
 

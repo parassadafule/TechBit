@@ -1,6 +1,8 @@
 const User = require('../models/User');
 const Post = require('../models/Post');
+const Notification = require('../models/Notification');
 const { serializePosts } = require('../utils/postResponse');
+const { emitNotification } = require('../socket/socketHandler');
 const logger = require('../utils/logger');
 
 
@@ -24,10 +26,24 @@ const getProfile = async (req, res) => {
       .limit(5)
       .select('title type tags createdAt');
 
+    const followersCount = Array.isArray(user.followers) ? user.followers.length : 0;
+    const followingCount = Array.isArray(user.following) ? user.following.length : 0;
+    const currentUserId = req.user?._id?.toString?.();
+    const isFollowing = currentUserId
+      ? (user.followers || []).some((followerId) => followerId.toString() === currentUserId)
+      : false;
+    const isFollowedBy = currentUserId
+      ? (user.following || []).some((followingId) => followingId.toString() === currentUserId)
+      : false;
+
     res.json({
       ...user.toObject(),
       contributionsCount,
       recentPosts,
+      followersCount,
+      followingCount,
+      isFollowing,
+      isFollowedBy,
     });
   } catch (error) {
     logger.error('Error getting profile:', error);
@@ -195,10 +211,12 @@ const getSuggestedUsers = async (req, res) => {
     const userId = req.user._id;
     const limit = parseInt(req.query.limit) || 5;
 
-    const currentUser = await User.findById(userId).select('interests');
+    const currentUser = await User.findById(userId).select('interests following');
     if (!currentUser) {
       return res.status(404).json({ error: 'User not found' });
     }
+
+    const excludedUserIds = [userId, ...(currentUser.following || [])];
 
     let suggestedUsers;
 
@@ -206,7 +224,7 @@ const getSuggestedUsers = async (req, res) => {
       suggestedUsers = await User.aggregate([
         {
           $match: {
-            _id: { $ne: userId },
+            _id: { $nin: excludedUserIds },
           },
         },
         {
@@ -252,7 +270,7 @@ const getSuggestedUsers = async (req, res) => {
       suggestedUsers = await User.aggregate([
         {
           $match: {
-            _id: { $ne: userId },
+            _id: { $nin: excludedUserIds },
           },
         },
         {
@@ -293,6 +311,109 @@ const getSuggestedUsers = async (req, res) => {
   }
 };
 
+const followUser = async (req, res) => {
+  try {
+    const currentUserId = req.user._id;
+    const targetUserId = req.params.id;
+
+    if (currentUserId.toString() === targetUserId.toString()) {
+      return res.status(400).json({ error: 'You cannot follow yourself' });
+    }
+
+    const [currentUser, targetUser] = await Promise.all([
+      User.findById(currentUserId),
+      User.findById(targetUserId),
+    ]);
+
+    if (!currentUser || !targetUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const alreadyFollowing = (currentUser.following || []).some(
+      (followedUserId) => followedUserId.toString() === targetUserId.toString(),
+    );
+
+    if (!alreadyFollowing) {
+      await Promise.all([
+        User.updateOne(
+          { _id: currentUser._id },
+          { $addToSet: { following: targetUser._id } },
+        ),
+        User.updateOne(
+          { _id: targetUser._id },
+          { $addToSet: { followers: currentUser._id } },
+        ),
+      ]);
+
+      const notification = await Notification.create({
+        userId: targetUser._id,
+        type: 'follow',
+        message: `${req.user.username} started following you`,
+        relatedId: currentUser._id,
+      });
+
+      emitNotification(targetUser._id.toString(), notification);
+    }
+
+    const [updatedCurrentUser, updatedTargetUser] = await Promise.all([
+      User.findById(currentUser._id).select('following'),
+      User.findById(targetUser._id).select('followers'),
+    ]);
+
+    return res.json({
+      success: true,
+      isFollowing: true,
+      followersCount: updatedTargetUser?.followers?.length || 0,
+      followingCount: updatedCurrentUser?.following?.length || 0,
+    });
+  } catch (error) {
+    logger.error('Error following user:', error);
+    return res.status(500).json({ error: 'Error following user' });
+  }
+};
+
+const unfollowUser = async (req, res) => {
+  try {
+    const currentUserId = req.user._id;
+    const targetUserId = req.params.id;
+
+    const [currentUser, targetUser] = await Promise.all([
+      User.findById(currentUserId),
+      User.findById(targetUserId),
+    ]);
+
+    if (!currentUser || !targetUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    await Promise.all([
+      User.updateOne(
+        { _id: currentUser._id },
+        { $pull: { following: targetUser._id } },
+      ),
+      User.updateOne(
+        { _id: targetUser._id },
+        { $pull: { followers: currentUser._id } },
+      ),
+    ]);
+
+    const [updatedCurrentUser, updatedTargetUser] = await Promise.all([
+      User.findById(currentUser._id).select('following'),
+      User.findById(targetUser._id).select('followers'),
+    ]);
+
+    return res.json({
+      success: true,
+      isFollowing: false,
+      followersCount: updatedTargetUser?.followers?.length || 0,
+      followingCount: updatedCurrentUser?.following?.length || 0,
+    });
+  } catch (error) {
+    logger.error('Error unfollowing user:', error);
+    return res.status(500).json({ error: 'Error unfollowing user' });
+  }
+};
+
 module.exports = {
   getProfile,
   updateProfile,
@@ -300,4 +421,6 @@ module.exports = {
   getActivityHistory,
   addActivity,
   getSuggestedUsers,
+  followUser,
+  unfollowUser,
 };

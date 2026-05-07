@@ -63,7 +63,6 @@ const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
         if (navigator.share) {
           await navigator.share({
             title: post.title,
-            text: post.tldr || post.title,
             url: shareUrl,
           });
           return;
@@ -103,7 +102,6 @@ const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
       if (navigator.share) {
         await navigator.share({
           title: post.title,
-          text: post.tldr || post.title,
           url: shareLink,
         });
         return;

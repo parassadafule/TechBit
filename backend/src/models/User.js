@@ -66,6 +66,18 @@ const userSchema = new mongoose.Schema(
         trim: true,
       },
     ],
+    followers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    following: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
     activityHistory: [
       {
         action: {
@@ -106,6 +118,8 @@ userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ username: 1 }, { unique: true });
 userSchema.index({ oauthProvider: 1, oauthId: 1 }, { unique: true });
 userSchema.index({ interests: 'text' });
+userSchema.index({ followers: 1 });
+userSchema.index({ following: 1 });
 
 userSchema.virtual('contributionsCount', {
   ref: 'Post',

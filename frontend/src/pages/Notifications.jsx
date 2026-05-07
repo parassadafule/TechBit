@@ -1,6 +1,18 @@
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bell, Check, CheckCheck, Trash2 } from 'lucide-react';
+import {
+  Bell,
+  Check,
+  CheckCheck,
+  FileText,
+  Heart,
+  MessageCircle,
+  Repeat2,
+  Sparkles,
+  Trash2,
+  UserPlus,
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { notificationAPI } from '../api';
 import { useSocket } from '../contexts/SocketContext';
 import Card from '../components/ui/Card';
@@ -10,11 +22,35 @@ import Spinner from '../components/ui/Spinner';
 import { formatTimeAgo } from '../utils/date';
 
 const notificationIcons = {
-  new_post: '📝',
-  like: '❤️',
-  comment: '💬',
-  share: '🔁',
-  recommendation: '✨',
+  new_post: FileText,
+  like: Heart,
+  comment: MessageCircle,
+  share: Repeat2,
+  recommendation: Sparkles,
+  follow: UserPlus,
+};
+
+const notificationLinkMap = {
+  new_post: {
+    buildHref: (relatedId) => `/app/post/${relatedId}`,
+    label: 'View post',
+  },
+  like: {
+    buildHref: (relatedId) => `/app/post/${relatedId}`,
+    label: 'View post',
+  },
+  comment: {
+    buildHref: (relatedId) => `/app/post/${relatedId}`,
+    label: 'View post',
+  },
+  share: {
+    buildHref: (relatedId) => `/app/post/${relatedId}`,
+    label: 'View post',
+  },
+  follow: {
+    buildHref: (relatedId) => `/app/profile/${relatedId}`,
+    label: 'View profile',
+  },
 };
 
 const Notifications = () => {
@@ -102,7 +138,7 @@ const Notifications = () => {
               </Badge>
             )}
           </h1>
-          <p className="mt-1 text-gray-600">Stay updated with post activity and platform events.</p>
+          <p className="mt-1 text-gray-600">Stay updated with activity from people and posts you follow.</p>
         </div>
 
         {unreadCount > 0 && (
@@ -124,62 +160,72 @@ const Notifications = () => {
         </div>
       ) : !data?.notifications || data.notifications.length === 0 ? (
         <Card className="p-12 text-center">
-          <div className="mb-4 text-6xl">🔔</div>
+          <div className="mb-4 flex justify-center">
+            <Bell size={48} className="text-gray-300" />
+          </div>
           <h3 className="mb-2 text-xl font-semibold text-gray-900">No notifications</h3>
           <p className="text-gray-600">You are all caught up.</p>
         </Card>
       ) : (
         <div className="space-y-3">
-          {data.notifications.map((notification) => (
-            <Card
-              key={notification._id}
-              className={`p-4 ${notification.read ? 'bg-white' : 'border-blue-200 bg-blue-50'}`}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex flex-1 items-start space-x-4">
-                  <div className="flex-shrink-0 text-2xl">
-                    {notificationIcons[notification.type] || '🔔'}
+          {data.notifications.map((notification) => {
+            const NotificationIcon = notificationIcons[notification.type] || Bell;
+            const linkConfig = notificationLinkMap[notification.type];
+            const href = notification.relatedId && linkConfig
+              ? linkConfig.buildHref(notification.relatedId)
+              : null;
+
+            return (
+              <Card
+                key={notification._id}
+                className={`p-4 ${notification.read ? 'bg-white' : 'border-blue-200 bg-blue-50'}`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex flex-1 items-start space-x-4">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-600">
+                      <NotificationIcon size={20} />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="text-gray-900">{notification.message}</p>
+                      <p className="mt-1 text-sm text-gray-500">{formatTimeAgo(notification.createdAt)}</p>
+
+                      {href && (
+                        <Link
+                          to={href}
+                          className="mt-2 inline-block text-sm text-primary-600 hover:underline"
+                        >
+                          {linkConfig.label}
+                        </Link>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="min-w-0 flex-1">
-                    <p className="text-gray-900">{notification.message}</p>
-                    <p className="mt-1 text-sm text-gray-500">{formatTimeAgo(notification.createdAt)}</p>
-
-                    {notification.relatedId && (
-                      <a
-                        href={`/app/post/${notification.relatedId}`}
-                        className="mt-2 inline-block text-sm text-primary-600 hover:underline"
+                  <div className="ml-4 flex items-center space-x-2">
+                    {!notification.read && (
+                      <button
+                        type="button"
+                        onClick={() => markAsReadMutation.mutate(notification._id)}
+                        className="rounded-lg p-2 text-blue-600 hover:bg-blue-100"
+                        title="Mark as read"
                       >
-                        View post →
-                      </a>
+                        <Check size={18} />
+                      </button>
                     )}
-                  </div>
-                </div>
 
-                <div className="ml-4 flex items-center space-x-2">
-                  {!notification.read && (
                     <button
                       type="button"
-                      onClick={() => markAsReadMutation.mutate(notification._id)}
-                      className="rounded-lg p-2 text-blue-600 hover:bg-blue-100"
-                      title="Mark as read"
+                      onClick={() => deleteMutation.mutate(notification._id)}
+                      className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
+                      title="Delete"
                     >
-                      <Check size={18} />
+                      <Trash2 size={18} />
                     </button>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => deleteMutation.mutate(notification._id)}
-                    className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
-                    title="Delete"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  </div>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

@@ -30,8 +30,6 @@ const Profile = () => {
 
   const id = userId || currentUser?._id;
 
-  console.log('Profile component rendered with userId:', userId, 'currentUser:', currentUser);
-
   const isOwnProfile = !userId || userId === currentUser?._id;
 
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -54,11 +52,29 @@ const Profile = () => {
   const updateProfileMutation = useMutation({
     mutationFn: (payload) => userAPI.updateProfile(payload),
     onSuccess: (updatedUser) => {
-      queryClient.invalidateQueries(['profile', userId]);
+      queryClient.invalidateQueries({ queryKey: ['profile', userId] });
       if (isOwnProfile) {
         setCurrentUser(updatedUser);
       }
       setIsEditing(false);
+    },
+  });
+
+  const followMutation = useMutation({
+    mutationFn: () => userAPI.followUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['suggested-users'] });
+    },
+  });
+
+  const unfollowMutation = useMutation({
+    mutationFn: () => userAPI.unfollowUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['suggested-users'] });
     },
   });
 
@@ -72,6 +88,10 @@ const Profile = () => {
 
   const user = profile || currentUser;
   const posts = postsData?.posts || [];
+  const followersCount = user?.followersCount || 0;
+  const followingCount = user?.followingCount || 0;
+  const isFollowing = Boolean(user?.isFollowing);
+  const isFollowLoading = followMutation.isPending || unfollowMutation.isPending;
 
   const startEdit = () => {
     setFormState({
@@ -117,10 +137,25 @@ const Profile = () => {
                 <p className="text-gray-600">@{user?.username}</p>
               </div>
               
-              {isOwnProfile && (
+              {isOwnProfile ? (
                 <Button variant="outline" size="sm" onClick={startEdit}>
                   <Edit size={16} className="mr-2" />
                   Edit Profile
+                </Button>
+              ) : (
+                <Button
+                  variant={isFollowing ? 'outline' : 'primary'}
+                  size="sm"
+                  onClick={() => {
+                    if (isFollowing) {
+                      unfollowMutation.mutate();
+                    } else {
+                      followMutation.mutate();
+                    }
+                  }}
+                  loading={isFollowLoading}
+                >
+                  {isFollowing ? 'Unfollow' : 'Follow'}
                 </Button>
               )}
             </div>
@@ -154,15 +189,15 @@ const Profile = () => {
             {}
             <div className="flex gap-6 mt-4 pt-4 border-t border-gray-100">
               <div>
-                <span className="font-bold text-gray-900">{posts.length}</span>
+                <span className="font-bold text-gray-900">{user?.contributionsCount || posts.length}</span>
                 <span className="text-gray-600 ml-1">Posts</span>
               </div>
               <div>
-                <span className="font-bold text-gray-900">0</span>
+                <span className="font-bold text-gray-900">{followersCount}</span>
                 <span className="text-gray-600 ml-1">Followers</span>
               </div>
               <div>
-                <span className="font-bold text-gray-900">0</span>
+                <span className="font-bold text-gray-900">{followingCount}</span>
                 <span className="text-gray-600 ml-1">Following</span>
               </div>
             </div>

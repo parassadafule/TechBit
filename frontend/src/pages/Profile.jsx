@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MapPin, Link as LinkIcon, Calendar, Edit } from 'lucide-react';
 import { userAPI } from '../api';
@@ -11,6 +11,7 @@ import Badge from '../components/ui/Badge';
 import Spinner from '../components/ui/Spinner';
 import Input from '../components/ui/Input';
 import TextArea from '../components/ui/TextArea';
+import Modal from '../components/ui/Modal';
 import { formatDate } from '../utils/date';
 
 const Profile = () => {
@@ -19,6 +20,7 @@ const Profile = () => {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState('posts');
   const [isEditing, setIsEditing] = useState(false);
+  const [followModal, setFollowModal] = useState({ isOpen: false, type: 'followers' });
   const [formState, setFormState] = useState({
     name: '',
     username: '',
@@ -78,6 +80,32 @@ const Profile = () => {
     },
   });
 
+  const user = profile || currentUser;
+  const posts = postsData?.posts || [];
+  const followersCount = user?.followersCount || 0;
+  const followingCount = user?.followingCount || 0;
+  const isFollowing = Boolean(user?.isFollowing);
+  const isFollowLoading = followMutation.isPending || unfollowMutation.isPending;
+
+  const followModalTitle = useMemo(() => {
+    if (followModal.type === 'following') return 'Following';
+    return 'Followers';
+  }, [followModal.type]);
+
+  const {
+    data: followListData,
+    isLoading: followListLoading,
+  } = useQuery({
+    queryKey: ['follow-list', followModal.type, id],
+    queryFn: () =>
+      followModal.type === 'following'
+        ? userAPI.getFollowing(id, { page: 1, limit: 100 })
+        : userAPI.getFollowers(id, { page: 1, limit: 100 }),
+    enabled: followModal.isOpen && !!id,
+  });
+
+  const followUsers = followListData?.users || [];
+
   if (profileLoading) {
     return (
       <div className="flex justify-center py-12">
@@ -85,13 +113,6 @@ const Profile = () => {
       </div>
     );
   }
-
-  const user = profile || currentUser;
-  const posts = postsData?.posts || [];
-  const followersCount = user?.followersCount || 0;
-  const followingCount = user?.followingCount || 0;
-  const isFollowing = Boolean(user?.isFollowing);
-  const isFollowLoading = followMutation.isPending || unfollowMutation.isPending;
 
   const startEdit = () => {
     setFormState({
@@ -192,14 +213,22 @@ const Profile = () => {
                 <span className="font-bold text-gray-900">{user?.contributionsCount || posts.length}</span>
                 <span className="text-gray-600 ml-1">Posts</span>
               </div>
-              <div>
+              <button
+                type="button"
+                onClick={() => setFollowModal({ isOpen: true, type: 'followers' })}
+                className="text-left hover:opacity-80 transition-opacity"
+              >
                 <span className="font-bold text-gray-900">{followersCount}</span>
                 <span className="text-gray-600 ml-1">Followers</span>
-              </div>
-              <div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFollowModal({ isOpen: true, type: 'following' })}
+                className="text-left hover:opacity-80 transition-opacity"
+              >
                 <span className="font-bold text-gray-900">{followingCount}</span>
                 <span className="text-gray-600 ml-1">Following</span>
-              </div>
+              </button>
             </div>
 
             {}
@@ -344,6 +373,42 @@ const Profile = () => {
           )}
         </div>
       )}
+
+      <Modal
+        isOpen={followModal.isOpen}
+        onClose={() => setFollowModal((prev) => ({ ...prev, isOpen: false }))}
+        title={followModalTitle}
+        size="sm"
+      >
+        {followListLoading ? (
+          <div className="flex justify-center py-10">
+            <Spinner size="lg" />
+          </div>
+        ) : followUsers.length === 0 ? (
+          <div className="py-10 text-center text-gray-600">
+            No {followModal.type === 'following' ? 'following' : 'followers'} yet
+          </div>
+        ) : (
+          <div className="max-h-[60vh] overflow-auto">
+            <div className="space-y-2">
+              {followUsers.map((u) => (
+                <Link
+                  key={u._id}
+                  to={`/app/profile/${u._id}`}
+                  onClick={() => setFollowModal((prev) => ({ ...prev, isOpen: false }))}
+                  className="flex items-center gap-3 rounded-md p-2 hover:bg-gray-50 transition-colors"
+                >
+                  <Avatar src={u.avatarUrl} alt={u.username} size="md" />
+                  <div className="min-w-0">
+                    <div className="font-medium text-gray-900 truncate">{u.name || u.username}</div>
+                    <div className="text-sm text-gray-600 truncate">@{u.username}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

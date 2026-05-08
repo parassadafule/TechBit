@@ -10,6 +10,8 @@ const {
   getSuggestedUsers,
   followUser,
   unfollowUser,
+  getFollowers,
+  getFollowing,
 } = require('../controllers/userController');
 
 const router = express.Router();
@@ -21,6 +23,10 @@ router.get('/profile/:id?', getProfile);
 router.post('/:id/follow', followUser);
 
 router.delete('/:id/follow', unfollowUser);
+
+router.get('/:id/followers', getFollowers);
+
+router.get('/:id/following', getFollowing);
 
 router.get('/:id/posts', getUserPosts);
 

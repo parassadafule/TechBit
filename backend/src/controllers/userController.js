@@ -414,6 +414,74 @@ const unfollowUser = async (req, res) => {
   }
 };
 
+const getFollowers = async (req, res) => {
+  try {
+    const userId = req.params.id || req.user._id;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = Math.min(parseInt(req.query.limit, 10) || 50, 100);
+    const skip = (page - 1) * limit;
+
+    const user = await User.findById(userId).select('followers');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const followerIds = Array.isArray(user.followers) ? user.followers : [];
+    const total = followerIds.length;
+    const pageIds = followerIds.slice(skip, skip + limit);
+    const users = await User.find({ _id: { $in: pageIds } })
+      .select('name username avatarUrl')
+      .sort({ username: 1 });
+
+    return res.json({
+      users,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    logger.error('Error getting followers:', error);
+    return res.status(500).json({ error: 'Error fetching followers' });
+  }
+};
+
+const getFollowing = async (req, res) => {
+  try {
+    const userId = req.params.id || req.user._id;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = Math.min(parseInt(req.query.limit, 10) || 50, 100);
+    const skip = (page - 1) * limit;
+
+    const user = await User.findById(userId).select('following');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const followingIds = Array.isArray(user.following) ? user.following : [];
+    const total = followingIds.length;
+    const pageIds = followingIds.slice(skip, skip + limit);
+    const users = await User.find({ _id: { $in: pageIds } })
+      .select('name username avatarUrl')
+      .sort({ username: 1 });
+
+    return res.json({
+      users,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    logger.error('Error getting following:', error);
+    return res.status(500).json({ error: 'Error fetching following' });
+  }
+};
+
 module.exports = {
   getProfile,
   updateProfile,
@@ -423,4 +491,6 @@ module.exports = {
   getSuggestedUsers,
   followUser,
   unfollowUser,
+  getFollowers,
+  getFollowing,
 };

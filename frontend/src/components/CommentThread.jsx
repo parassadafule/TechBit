@@ -61,6 +61,7 @@ const CommentThread = ({ postId, comments, isLoading }) => {
     }
   };
 
+  // console.log(this.comment)
   return (
     <div className="space-y-6">
       {}
@@ -82,7 +83,7 @@ const CommentThread = ({ postId, comments, isLoading }) => {
         </div>
       </form>
 
-      {}
+      
       <div className="space-y-4">
         {isLoading ? (
           <p className="text-center text-gray-500">Loading comments...</p>
@@ -92,7 +93,6 @@ const CommentThread = ({ postId, comments, isLoading }) => {
           comments?.map((comment) => (
             <div key={comment._id} className="flex space-x-3">
               <Avatar src={comment.userId?.avatarUrl} alt={comment.userId?.username} size="sm" />
-              
               <div className="flex-1 bg-gray-50 rounded-lg p-4">
                 <div className="flex items-start justify-between mb-2">
                   <div>

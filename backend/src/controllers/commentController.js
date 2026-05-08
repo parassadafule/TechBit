@@ -12,7 +12,7 @@ const getComments = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const comments = await Comment.find({ postId })
-      .populate('userId', 'username email')
+      .populate('userId', 'username email avatarUrl')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -51,7 +51,7 @@ const createComment = async (req, res) => {
       text,
     });
 
-    await comment.populate('userId', 'username email');
+    await comment.populate('userId', 'username email avatarUrl');
 
     if (post.userId.toString() !== userId.toString()) {
       const notification = await Notification.create({
@@ -93,7 +93,7 @@ const updateComment = async (req, res) => {
     comment.text = text;
     await comment.save();
 
-    await comment.populate('userId', 'username email');
+    await comment.populate('userId', 'username email avatarUrl');
 
     res.json(comment);
   } catch (error) {

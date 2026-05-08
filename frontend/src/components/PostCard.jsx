@@ -127,13 +127,14 @@ const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
   const formattedContent = post.content;;
   const formattedTldr = post.tldr.replace(/(^|\n)\s*•\s+/g, '$1- ').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();;
 
+  console.log(post)
   return (
     <Card className="p-6 hover:shadow-md transition-shadow">
       {}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
           <Link to={`/app/profile/${post.userId._id}`}>
-            <Avatar src={null} alt={post.userId.username} />
+            <Avatar src={post.userId?.avatarUrl} alt={post.userId.username} />
           </Link>
           <div>
             <Link to={`/app/profile/${post.userId._id}`} className="font-semibold text-gray-900 hover:underline">

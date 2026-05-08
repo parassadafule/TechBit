@@ -95,7 +95,7 @@ const Navbar = () => {
               to="/app/profile"
               className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-lg"
             >
-              <Avatar src={null} alt={user?.username} size="sm" />
+              <Avatar src={user?.avatarUrl} alt={user?.username} size="sm" />
               <span className="hidden md:block font-medium text-gray-700">{user?.username}</span>
             </Link>
 

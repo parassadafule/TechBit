@@ -128,8 +128,9 @@ async function generateTags(content) {
 
 STRICT RULES:
 - Generate 4 to 5 tags for the following content.
-- Return ONLY comma-separated sinle worded tags.
+- Return ONLY comma-separated SINGLE-WORD tags.
 - Tags should be relevant, specific, and useful for categorization.
+- Do not use spaces in tags; use hyphens if needed (e.g., "machine-learning", not "machine learning").
 
 Content:
 ${content}

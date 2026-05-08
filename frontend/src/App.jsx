@@ -90,7 +90,7 @@ function AppRoutes() {
         <Route index element={<Feed />} />
         <Route path="post/:postId" element={<PostDetail />} />
         <Route path="search" element={<Search />} />
-        <Route path="profile/:userId" element={<Profile />} />
+        <Route path="profile/:username" element={<Profile />} />
         <Route path="profile" element={<Profile />} />
         <Route path="ai-chat" element={<AIChat />} />
         <Route path="learning" element={<LearningPath />} />

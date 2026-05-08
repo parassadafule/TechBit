@@ -15,7 +15,7 @@ import Modal from '../components/ui/Modal';
 import { formatDate } from '../utils/date';
 
 const Profile = () => {
-  const { userId } = useParams();
+  const { username } = useParams();
   const { user: currentUser, setUser: setCurrentUser } = useAuth();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState('posts');
@@ -30,14 +30,18 @@ const Profile = () => {
     interestsInput: '',
   });
 
-  const id = userId || currentUser?._id;
-
-  const isOwnProfile = !userId || userId === currentUser?._id;
+  const identifier = username;
+  const isOwnProfile = !identifier
+    || identifier === currentUser?._id
+    || identifier === currentUser?.username;
 
   const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ['profile', userId],
-    queryFn: () => userAPI.getProfile(userId),
+    queryKey: ['profile', identifier || 'me'],
+    queryFn: () => userAPI.getProfile(identifier),
+    enabled: Boolean(identifier || currentUser?._id),
   });
+
+  const id = isOwnProfile ? currentUser?._id : profile?._id;
 
   const { data: postsData, isLoading: postsLoading } = useQuery({
     queryKey: ['posts', 'user', id],
@@ -46,7 +50,7 @@ const Profile = () => {
   });
 
   const { data: activityData, isLoading: activityLoading } = useQuery({
-    queryKey: ['activity', userId],
+    queryKey: ['activity', id],
     queryFn: () => userAPI.getActivity(1, 20),
     enabled: tab === 'activity' && isOwnProfile,
   });
@@ -54,7 +58,7 @@ const Profile = () => {
   const updateProfileMutation = useMutation({
     mutationFn: (payload) => userAPI.updateProfile(payload),
     onSuccess: (updatedUser) => {
-      queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+      queryClient.invalidateQueries({ queryKey: ['profile', identifier || 'me'] });
       if (isOwnProfile) {
         setCurrentUser(updatedUser);
       }
@@ -65,7 +69,7 @@ const Profile = () => {
   const followMutation = useMutation({
     mutationFn: () => userAPI.followUser(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+      queryClient.invalidateQueries({ queryKey: ['profile', identifier || 'me'] });
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       queryClient.invalidateQueries({ queryKey: ['suggested-users'] });
     },
@@ -74,7 +78,7 @@ const Profile = () => {
   const unfollowMutation = useMutation({
     mutationFn: () => userAPI.unfollowUser(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+      queryClient.invalidateQueries({ queryKey: ['profile', identifier || 'me'] });
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       queryClient.invalidateQueries({ queryKey: ['suggested-users'] });
     },
@@ -394,7 +398,7 @@ const Profile = () => {
               {followUsers.map((u) => (
                 <Link
                   key={u._id}
-                  to={`/app/profile/${u._id}`}
+                  to={`/app/profile/${u.username}`}
                   onClick={() => setFollowModal((prev) => ({ ...prev, isOpen: false }))}
                   className="flex items-center gap-3 rounded-md p-2 hover:bg-gray-50 transition-colors"
                 >

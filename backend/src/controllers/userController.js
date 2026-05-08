@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const Post = require('../models/Post');
 const Notification = require('../models/Notification');
@@ -8,20 +9,25 @@ const logger = require('../utils/logger');
 
 const getProfile = async (req, res) => {
   try {
-    const userId = req.params.id || req.user._id;
+    const identifier = req.params.id || req.user._id;
 
-    if (!userId || userId === 'undefined') {
+    if (!identifier || identifier === 'undefined') {
       return res.status(400).json({ error: 'User ID required' });
     }
 
-    const user = await User.findById(userId).select('-__v');
+    const identifierStr = String(identifier);
+    const isObjectId = mongoose.Types.ObjectId.isValid(identifierStr);
+    const user = isObjectId
+      ? await User.findById(identifierStr).select('-__v')
+      : await User.findOne({ username: identifierStr }).select('-__v');
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const contributionsCount = await Post.countDocuments({ userId });
+    const userId = user._id;
+    const contributionsCount = await Post.countDocuments({ userId: userId });
 
-    const recentPosts = await Post.find({ userId })
+    const recentPosts = await Post.find({ userId: userId })
       .sort({ createdAt: -1 })
       .limit(5)
       .select('title type tags createdAt');

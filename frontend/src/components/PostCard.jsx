@@ -133,11 +133,11 @@ const PostCard = ({ post, showFullContent = false, userInterests = [] }) => {
       {}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
-          <Link to={`/app/profile/${post.userId._id}`}>
+          <Link to={`/app/profile/${post.userId.username}`}>
             <Avatar src={post.userId?.avatarUrl} alt={post.userId.username} />
           </Link>
           <div>
-            <Link to={`/app/profile/${post.userId._id}`} className="font-semibold text-gray-900 hover:underline">
+            <Link to={`/app/profile/${post.userId.username}`} className="font-semibold text-gray-900 hover:underline">
               {post.userId.username}
             </Link>
             <div className="flex items-center space-x-2 text-sm text-gray-500">

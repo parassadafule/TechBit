@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { MoreHorizontal, Trash2, Edit2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Avatar from './ui/Avatar';
 import Button from './ui/Button';
 import TextArea from './ui/TextArea';
@@ -92,11 +93,25 @@ const CommentThread = ({ postId, comments, isLoading }) => {
         ) : (
           comments?.map((comment) => (
             <div key={comment._id} className="flex space-x-3">
-              <Avatar src={comment.userId?.avatarUrl} alt={comment.userId?.username} size="sm" />
+              <Link
+                to={comment.userId?.username ? `/app/profile/${comment.userId.username}` : '/app/profile'}
+                className="shrink-0"
+              >
+                <Avatar src={comment.userId?.avatarUrl} alt={comment.userId?.username} size="sm" />
+              </Link>
               <div className="flex-1 bg-gray-50 rounded-lg p-4">
                 <div className="flex items-start justify-between mb-2">
                   <div>
-                    <span className="font-semibold text-gray-900">{comment.userId?.username || 'Unknown user'}</span>
+                    {comment.userId?.username ? (
+                      <Link
+                        to={`/app/profile/${comment.userId.username}`}
+                        className="font-semibold text-gray-900 hover:underline"
+                      >
+                        {comment.userId.username}
+                      </Link>
+                    ) : (
+                      <span className="font-semibold text-gray-900">Unknown user</span>
+                    )}
                     <span className="text-sm text-gray-500 ml-2">{formatTimeAgo(comment.createdAt)}</span>
                   </div>
                   

@@ -128,7 +128,7 @@ const Profile = () => {
       {}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
         <div className="flex flex-col sm:flex-row gap-6">
-          <Avatar src={null} alt={user?.username} size="xl" />
+          <Avatar src={user?.avatarUrl} alt={user?.username} size="xl" />
           
           <div className="flex-1">
             <div className="flex items-start justify-between mb-4">

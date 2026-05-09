@@ -162,11 +162,11 @@ function buildTLDRPrompt(title, content, context, type) {
   return `You are a highly efficient technical summarizer. Your task is to extract a TL;DR from the provided content.
 
 STRICT INSTRUCTIONS:
-- Create 3 to 5 bullet points only.
+- Create 3 to 5 bullet points according to the content length.
 - Each bullet must be one clear, concise sentence.
 - Rewrite everything in your own words — do not copy phrases.
 - Focus only on the most important ideas from the content.
-- Prioritize developer value and practical takeaways.
+- Prioritize practical takeaways and unique insights.
 - Focus on: ${typeGuide}
 
 CONTENT TO SUMMARIZE:

@@ -14,7 +14,7 @@ class RAGService {
   constructor() {
     this.ollamaBaseUrl = (process.env.OLLAMA_BASE_URL || 'http://localhost:11434').replace(/\/$/, '');
     this.embeddingModel = process.env.OLLAMA_EMBEDDING_MODEL || 'nomic-embed-text:latest';
-    this.chatModel = process.env.OLLAMA_CHAT_MODEL || 'phi3:latest';
+    this.chatModel = process.env.OLLAMA_CHAT_MODEL || 'qwen3:4b';
     this.chunkSize = parseInt(process.env.CHUNK_SIZE) || 500;
     this.chunkOverlap = parseInt(process.env.CHUNK_OVERLAP) || 50;
     this.topK = parseInt(process.env.TOP_K_RETRIEVAL) || 5;
@@ -421,12 +421,12 @@ Produce:
         })
         .join('\n\n');
 
-      const prompt = `You are a developer AI assistant answering a user's question using only the provided evidence.
+      const prompt = `You are a developer AI assistant answering a user's question.
 
 Rules:
 - Answer the user's actual question directly.
 - Use the evidence when it is relevant.
-- If the evidence is incomplete, say so clearly instead of guessing.
+- If the evidence is incomplete, give answer related to the question.
 - Keep the answer concise, practical, and developer-focused.
 
 Question: ${query}

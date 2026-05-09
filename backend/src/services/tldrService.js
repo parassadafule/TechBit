@@ -153,30 +153,32 @@ async function generateTLDR({
 
 function buildTLDRPrompt(title, content, context, type) {
   const typeGuide = {
-    blog: 'focus on key concepts, insights, and technical ideas',
-    repo: 'focus on features, capabilities, and use cases for developers',
-    video: 'focus on learning outcomes, demonstrations, and key takeaways',
-    podcast: 'focus on discussion points, insights, and actionable advice',
-  }[type] || 'focus on the main value proposition and key insights';
+    blog: 'key technical concepts, insights, and architectural ideas',
+    repo: 'main features, capabilities, tech stack, and developer use cases',
+    video: 'core learning outcomes, demonstrations, and practical takeaways',
+    podcast: 'main discussion points, expert insights, and actionable advice',
+  }[type] || 'main value and key insights';
 
-  return `You are summarizing content into a TLDR.
+  return `You are a highly efficient technical summarizer. Your task is to extract a TL;DR from the provided content.
 
-STRICT RULES:
-- Generate 3 to 5 bullet points according to length of content.
-- Each bullet must be 1 concise sentence
-- Each bullet should represent a unique key idea
-- Rewrite completely (no copying)
-- Keep it simple and clear
-- No long paragraphs
-- Focus on ${typeGuide}
+STRICT INSTRUCTIONS:
+- Create 3 to 5 bullet points only.
+- Each bullet must be one clear, concise sentence.
+- Rewrite everything in your own words — do not copy phrases.
+- Focus only on the most important ideas from the content.
+- Prioritize developer value and practical takeaways.
+- Focus on: ${typeGuide}
 
-FORMAT:
-• sentence
-• sentence
-• sentence
+CONTENT TO SUMMARIZE:
+Title: ${title}
+${content || context}
 
-CONTENT:
-${content}`;
+OUTPUT FORMAT (exactly like this, nothing else):
+
+• First key point in one sentence.
+• Second key point in one sentence.
+• Third key point in one sentence.
+• ...`;
 }
 
 module.exports = {

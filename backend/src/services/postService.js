@@ -124,13 +124,13 @@ async function generatePostTLDR(title, content, embedding, type) {
 }
 
 async function generateTags(content) {
-  const prompt = `You are a helpful assistant.
+  const prompt = `You are a helpful assistant. Your task is to generate precise metadata tags for developer-focused content.
 
 STRICT RULES:
 - Generate 4 to 5 tags for the following content.
-- Return ONLY comma-separated SINGLE-WORD tags.
+- Return ONLY comma-separated SINGLE-STRING format tags.
 - Tags should be relevant, specific, and useful for categorization.
-- Do not use spaces in tags; use hyphens if needed (e.g., "machine-learning", not "machine learning").
+- For multi word concepts, use KEBAB-CASE.
 
 Content:
 ${content}
@@ -329,54 +329,48 @@ async function generateContentFromUrl(url, type, title = '') {
     `Extracted content: ${(scraped.extractedText || '').slice(0, 9000) || 'N/A'}`,
   ].join('\n');
 
-  const prompt = `You are an expert developer content creator for a modern tech social platform (like Dev.to, Hacker News, or LinkedIn for developers).
+  const prompt = `You are an expert developer content creator for TechBit, a modern AI-powered platform for tech enthusiasts.
+Your task is to generate a highly structured, practical, and valuable developer post based strictly on the provided grounding data.
 
-Your task: Generate a HIGH-QUALITY developer post based on the URL provided. The post should be structured, practical, and immediately valuable to developers.
-
-INPUT
+INPUT:
 - URL: ${url}
 - Type: ${effectiveType}
 - Focus: ${typeHint}
 
-SCRAPED GROUNDING DATA (USE THIS AS SOURCE OF TRUTH)
+GROUNDING DATA (USE ONLY THIS):
 ${groundingContext}
 
-OUTPUT FORMAT
+STRICT RULES:
+- Base every claim strictly on the grounding data.
+- If something is not mentioned or unclear, say "likely includes" or "focuses on" — never invent specifics.
+- Do not use phrases like "I accessed", "According to the page", or "This article says".
+- Target senior developers, tech leads, and architects.
+- Keep total length 400-550 words.
+- Be practical, scannable, and actionable.
 
-Generate the post in this exact markdown structure:
+OUTPUT IN THIS EXACT MARKDOWN STRUCTURE ONLY:
 
-• Overview
-(2-3 sentences explaining what this resource is and why it matters to developers)
+**Overview**  
+(2-3 sentences: what the resource is and why it matters)
 
-• Key Takeaways
-- Point 1: Specific insight or feature
-- Point 2: Specific insight or feature
-- Point 3: Specific insight or feature
-- Point 4: Specific insight or feature
+**Key Takeaways**  
+- Concept 1 (specific insight)
+- Concept 2 (specific insight)
+- Concept 3 (specific insight)
+- Concept 4 (specific insight)
 
-• Practical Application
-(Explain how developers can use this concept, tool, or knowledge in their projects. Be specific with examples or use cases)
+**Practical Application**  
+(How anyone can actually use this in real projects with specific use cases)
 
-• Why It Matters
-(Explain the broader impact or value proposition for the developer community)
+**Why It Matters**  
+(Broader impact on developer workflows or the community)
 
-• Next Steps
-- Resource 1 to explore
-- Resource 2 to explore
-- Resource 3 to explore
+**Next Steps**  
+- 1. Suggested follow-up resource or action
+- 2. Suggested follow-up resource or action
+- 3. Suggested follow-up resource or action
 
-RULES
-1. DO NOT say "I accessed this URL" or "According to this page"
-2. DO NOT hallucinate specific code or technical claims
-3. If unsure about details, use phrases like "likely covers" or "typically includes"
-4. Keep content PRACTICAL and SPECIFIC, not generic
-5. Target audience: senior developers, team leads, architects, developers community
-6. Total length: 400-600 words
-7. Use markdown formatting with clear sections where appropriate
-8. Be concise and scannable (use bullet points)
-9. Use scraped data first. Never add facts not implied by scraped data.
-
-Generate the post now:`;
+Now generate the post following the structure exactly:`;
 
   try {
     logger.debug('Generating content from URL using LLM', { url, type });

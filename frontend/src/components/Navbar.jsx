@@ -49,13 +49,11 @@ const Navbar = () => {
 
   return (
     <nav className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {}
           <Link to="/app" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">T</span>
-            </div>
+            <img src="/Logo.svg" alt="TechBit logo" className="w-8 h-8 rounded-lg" />
             <span className="text-xl font-bold text-gray-900">TechBit</span>
           </Link>
 

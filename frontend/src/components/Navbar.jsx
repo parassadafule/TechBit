@@ -52,7 +52,7 @@ const Navbar = () => {
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {}
-          <Link to="/app" className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center space-x-2">
             <img src="/Logo.svg" alt="TechBit logo" className="w-8 h-8 rounded-lg" />
             <span className="text-xl font-bold text-gray-900">TechBit</span>
           </Link>

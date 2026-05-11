@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import {
   ArrowRight,
   BrainCircuit,
@@ -89,12 +88,6 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading } = useAuth();
 
-  useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      navigate("/app", { replace: true });
-    }
-  }, [isAuthenticated, isLoading, navigate]);
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#eef6ff_35%,#fff9f1_100%)]" />
@@ -122,12 +115,23 @@ const LandingPage = () => {
           </Link>
 
           <nav className="flex items-center gap-3">
-            <Link
-              to="/login"
-              className="rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 backdrop-blur hover:border-slate-300"
-            >
-              Log in
-            </Link>
+            {isAuthenticated ? (
+              <button
+                type="button"
+                onClick={() => navigate("/app")}
+                className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(15,23,42,0.16)] transition-transform hover:-translate-y-0.5"
+              >
+                Back to Feed
+                <ArrowRight size={16} />
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                className="rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 backdrop-blur hover:border-slate-300"
+              >
+                Log in
+              </Link>
+            )}
             <a
               href="#sources"
               className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(15,23,42,0.16)] transition-transform hover:-translate-y-0.5"
@@ -168,13 +172,24 @@ const LandingPage = () => {
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-              <Link
-                to="/login"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-sky-600 px-6 py-4 text-base font-semibold text-white shadow-[0_18px_38px_rgba(2,132,199,0.28)] transition-transform hover:-translate-y-0.5 hover:bg-sky-700"
-              >
-                Start with TechBit
-                <ArrowRight size={18} />
-              </Link>
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={() => navigate("/app")}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-sky-600 px-6 py-4 text-base font-semibold text-white shadow-[0_18px_38px_rgba(2,132,199,0.28)] transition-transform hover:-translate-y-0.5 hover:bg-sky-700"
+                >
+                  Go to your Feed
+                  <ArrowRight size={18} />
+                </button>
+              ) : (
+                <Link
+                  to="/login"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-sky-600 px-6 py-4 text-base font-semibold text-white shadow-[0_18px_38px_rgba(2,132,199,0.28)] transition-transform hover:-translate-y-0.5 hover:bg-sky-700"
+                >
+                  Start with TechBit
+                  <ArrowRight size={18} />
+                </Link>
+              )}
               <a
                 href="#sources"
                 className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white/85 px-6 py-4 text-base font-semibold text-slate-800 backdrop-blur hover:border-slate-400"

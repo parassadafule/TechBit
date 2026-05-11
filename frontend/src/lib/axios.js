@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { getResolvedApiBaseUrl } from './apiEnv';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_URL = getResolvedApiBaseUrl();
 const AUTH_TOKEN_KEY = 'techbit_auth_token';
 
 const api = axios.create({

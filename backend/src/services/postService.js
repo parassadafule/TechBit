@@ -344,11 +344,11 @@ STRICT RULES:
 - Base every claim strictly on the grounding data.
 - If something is not mentioned or unclear, say "likely includes" or "focuses on" — never invent specifics.
 - Do not use phrases like "I accessed", "According to the page", or "This article says".
-- Target senior developers, tech leads, and architects.
+- Prioritize technical depth, practical insights, and actionable information.
 - Keep total length 400-550 words.
 - Be practical, scannable, and actionable.
 
-OUTPUT IN THIS EXACT MARKDOWN STRUCTURE ONLY:
+OUTPUT IN THIS EXACT STRUCTURE ONLY:
 
 **Overview**  
 (2-3 sentences: what the resource is and why it matters)

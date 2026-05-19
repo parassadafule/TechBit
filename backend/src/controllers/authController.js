@@ -25,6 +25,7 @@ const sanitizeUser = (user) => {
     location: source.location,
     website: source.website,
     interests: source.interests || [],
+    currentlyLearning: source.currentlyLearning || [],
     goals: source.goals,
     createdAt: source.createdAt,
     updatedAt: source.updatedAt,

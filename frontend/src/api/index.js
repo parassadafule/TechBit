@@ -213,18 +213,28 @@ export const learningPathAPI = {
     }
   },
 
-  create: async (goal) => {
-    const response = await api.post('/learning-path', { goal });
+  create: async (path) => {
+    const response = await api.post('/learning-path', { path });
     return response.data;
   },
 
-  complete: async (pathId) => {
-    const response = await api.patch(`/learning-path/${pathId}/complete`);
+  generate: async ({ goal, durationWeeks, interests }) => {
+    const response = await api.post('/learning-path/generate', { goal, durationWeeks, interests });
+    return response.data;
+  },
+
+  complete: async (pathId, data) => {
+    const response = await api.patch(`/learning-path/${pathId}/complete`, data);
     return response.data;
   },
 
   feedback: async (pathId, postId, helpful) => {
     const response = await api.patch(`/learning-path/${pathId}/feedback`, { postId, helpful });
+    return response.data;
+  },
+
+  delete: async (pathId) => {
+    const response = await api.delete(`/learning-path/${pathId}`);
     return response.data;
   },
 };

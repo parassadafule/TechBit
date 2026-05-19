@@ -28,6 +28,7 @@ const Profile = () => {
     location: '',
     website: '',
     interestsInput: '',
+    currentlyLearningInput: '',
   });
 
   const identifier = username;
@@ -126,6 +127,7 @@ const Profile = () => {
       location: user?.location || '',
       website: user?.website || '',
       interestsInput: Array.isArray(user?.interests) ? user.interests.join(', ') : '',
+      currentlyLearningInput: Array.isArray(user?.currentlyLearning) ? user.currentlyLearning.join(', ') : '',
     });
     setIsEditing(true);
   };
@@ -137,6 +139,10 @@ const Profile = () => {
       .split(',')
       .map((item) => item.trim())
       .filter(Boolean);
+    const currentlyLearning = formState.currentlyLearningInput
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
 
     updateProfileMutation.mutate({
       name: formState.name,
@@ -145,6 +151,7 @@ const Profile = () => {
       location: formState.location,
       website: formState.website,
       interests,
+      currentlyLearning,
     });
   };
 
@@ -236,16 +243,33 @@ const Profile = () => {
             </div>
 
             {}
-            {user?.interests && user.interests.length > 0 && (
-              <div className="mt-4">
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">Interests</h3>
-                <div className="flex flex-wrap gap-2">
-                  {user.interests.map((interest) => (
-                    <Badge key={interest} variant="primary">
-                      {interest}
-                    </Badge>
-                  ))}
-                </div>
+            {((user?.interests && user.interests.length > 0) || (isOwnProfile && user?.currentlyLearning?.length > 0)) && (
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                {user?.interests && user.interests.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-2">Interests</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {user.interests.map((interest) => (
+                        <Badge key={interest} variant="primary">
+                          {interest}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {isOwnProfile && user?.currentlyLearning?.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-2">Currently Learning</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {user.currentlyLearning.map((topic) => (
+                        <Badge key={topic} variant="info">
+                          {topic}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -286,6 +310,12 @@ const Profile = () => {
                   value={formState.interestsInput}
                   onChange={(event) => setFormState((prev) => ({ ...prev, interestsInput: event.target.value }))}
                   placeholder="react, node.js, system design"
+                />
+                <Input
+                  label="Currently Learning"
+                  value={formState.currentlyLearningInput}
+                  onChange={(event) => setFormState((prev) => ({ ...prev, currentlyLearningInput: event.target.value }))}
+                  placeholder="graphql, kubernetes, rust"
                 />
 
                 <div className="flex gap-2">

@@ -53,6 +53,12 @@ const userSchema = new mongoose.Schema(
         trim: true,
       },
     ],
+    currentlyLearning: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
     likedTags: [
       {
         type: String,
@@ -117,7 +123,7 @@ const userSchema = new mongoose.Schema(
 userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ username: 1 }, { unique: true });
 userSchema.index({ oauthProvider: 1, oauthId: 1 }, { unique: true });
-userSchema.index({ interests: 'text' });
+userSchema.index({ interests: 'text', currentlyLearning: 'text' });
 userSchema.index({ followers: 1 });
 userSchema.index({ following: 1 });
 

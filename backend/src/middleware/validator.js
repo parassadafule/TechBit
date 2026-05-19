@@ -55,6 +55,16 @@ const validationRules = {
       .trim()
       .isLength({ max: 50 })
       .customSanitizer(sanitizeInput),
+    body('currentlyLearning')
+      .optional()
+      .isArray()
+      .withMessage('Currently learning must be an array'),
+    body('currentlyLearning.*')
+      .optional()
+      .isString()
+      .trim()
+      .isLength({ max: 50 })
+      .customSanitizer(sanitizeInput),
     body('goals.skillLevel')
       .optional()
       .isIn(['beginner', 'intermediate', 'advanced', 'expert'])

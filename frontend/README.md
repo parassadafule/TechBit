@@ -42,14 +42,14 @@ npm install
 copy .env.example .env
 ```
 
-3. Update values as needed:
+3. Update values in `frontend/.env` as needed:
 
 ```env
 VITE_API_URL=http://localhost:8000/api
 VITE_SOCKET_URL=http://localhost:8000
 ```
 
-Use the backend URL/port you actually run.
+The frontend expects cookie-based auth and will call the backend API at `VITE_API_URL`.
 
 4. Start dev server:
 
@@ -59,10 +59,17 @@ npm run dev
 
 ## Available Scripts
 
-- npm run dev: start Vite dev server
-- npm run build: create production build
-- npm run lint: run ESLint
-- npm run preview: preview production build locally
+- `npm run dev`: start Vite dev server
+- `npm run build`: create production build
+- `npm run lint`: run ESLint
+- `npm run preview`: preview production build locally
+
+To run the dev server with the backend running on port 8000:
+
+```powershell
+cd frontend
+npm run dev
+```
 
 ## App Routes
 

@@ -45,22 +45,34 @@ npm install
 copy .env.example .env
 ```
 
-3. Set required variables in .env:
+3. Set required variables in `backend/.env`:
 
-- MONGODB_URI
-- SESSION_SECRET
-- GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GOOGLE_CALLBACK_URL
-- GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET / GITHUB_CALLBACK_URL
-- FRONTEND_URL
+- `MONGODB_URI`
+- `SESSION_SECRET`
+- OAuth keys: `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_CALLBACK_URL`
+- `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` / `GITHUB_CALLBACK_URL`
+- `FRONTEND_URL`
 
 Optional but recommended:
 
-- OLLAMA_BASE_URL
-- OLLAMA_CHAT_MODEL
-- OLLAMA_EMBEDDING_MODEL
-- STACKEXCHANGE_KEY
-- TREND_FETCH_INTERVAL
-- LEARNING_PATH_REGEN_INTERVAL
+- `OLLAMA_BASE_URL`
+- `OLLAMA_CHAT_MODEL`
+- `OLLAMA_EMBEDDING_MODEL`
+- `STACKEXCHANGE_KEY`
+- `TREND_FETCH_INTERVAL`
+- `LEARNING_PATH_REGEN_INTERVAL`
+
+4. Seed development data (optional):
+
+```powershell
+npm run seed
+```
+
+5. Run tests (project includes Jest + Supertest):
+
+```powershell
+npm test
+```
 
 ## Run
 
@@ -76,11 +88,11 @@ Production-like:
 npm start
 ```
 
-Default port in current server implementation: 8000 when PORT is unset.
+Default port in current server implementation: 8000 when `PORT` is unset.
 
 ## API Surface
 
-Base path: /api
+Base API path: /api (examples below assume `VITE_API_URL` or direct calls point to this path)
 
 ### Health
 
@@ -174,15 +186,15 @@ Base path: /api
 
 ## Cron Jobs
 
-- Trend refresh: interval from TREND_FETCH_INTERVAL (default every 30 minutes)
-- Learning path maintenance: interval from LEARNING_PATH_REGEN_INTERVAL (default daily)
+- Trend refresh: interval from `TREND_FETCH_INTERVAL` (default every 30 minutes)
+- Learning path maintenance: interval from `LEARNING_PATH_REGEN_INTERVAL` (default daily)
 
 ## Logs
 
 Winston outputs to:
 
-- logs/error.log
-- logs/combined.log
+- `logs/error.log`
+- `logs/combined.log`
 
 ## Troubleshooting
 

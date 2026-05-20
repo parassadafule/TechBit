@@ -7,7 +7,7 @@ TechBit is a full-stack developer platform for sharing technical posts, discover
 - Backend API with Express, MongoDB, Passport OAuth, and Socket.IO.
 - Frontend app with React, Vite, TanStack Query, and React Router.
 - Post workflows: manual post creation, URL-based post generation, likes, shares, comments.
-- AI workflows: summarization, multimodal summarization, RAG-style query responses, recommendation and briefing endpoints.
+- AI workflows: summarization, multimodal summarization, retrieval-augmented generation (RAG) query responses, recommendations and developer briefing endpoints.
 - Personalized learning paths with regenerate and step completion flows.
 - Trend ingestion from GitHub, Stack Overflow, Reddit, Dev.to, and Hacker News.
 
@@ -26,35 +26,40 @@ TechBit is a full-stack developer platform for sharing technical posts, discover
 
 ### 1. Install Dependencies
 
-At repo root:
+Install dependencies for both services:
 
 ```powershell
 cd backend
 npm install
-cd ..\frontend
+cd ../frontend
 npm install
 ```
 
 ### 2. Configure Environment
 
-- Copy backend/.env.example to backend/.env
-- Copy frontend/.env.example to frontend/.env
+- Copy `backend/.env.example` to `backend/.env` and `frontend/.env.example` to `frontend/.env`.
 
-Important values to verify:
+Important env values:
 
-- backend/.env: MONGODB_URI, SESSION_SECRET, OAuth keys, OLLAMA_BASE_URL
-- frontend/.env: VITE_API_URL, VITE_SOCKET_URL
+- Backend: `MONGODB_URI`, `SESSION_SECRET`, OAuth keys, `OLLAMA_BASE_URL`, `FRONTEND_URL`.
+- Frontend: `VITE_API_URL`, `VITE_SOCKET_URL`.
 
 ### 3. Run Locally
 
-Backend:
+Backend (dev with auto-reload):
 
 ```powershell
 cd backend
 npm run dev
 ```
 
-Frontend:
+Backend production-like:
+
+```powershell
+npm start
+```
+
+Frontend (Vite dev server):
 
 ```powershell
 cd frontend
@@ -63,9 +68,9 @@ npm run dev
 
 ## Ports and URLs
 
-- Backend default port in current implementation: 8000 (if PORT is not set)
-- Frontend Vite default port: 5173
-- Frontend should point to the backend API URL configured in frontend/.env
+- Backend default port: 8000 when `PORT` is unset.
+- Frontend Vite default port: 5173.
+- Ensure `VITE_API_URL` in the frontend points to the backend API (e.g. `http://localhost:8000/api`).
 
 ## Key Product Areas
 
@@ -79,8 +84,8 @@ npm run dev
 
 ## Additional Docs
 
-- Backend details: backend/README.md
-- Frontend details: frontend/README.md
+- Backend details: [backend/README.md](backend/README.md#L1)
+- Frontend details: [frontend/README.md](frontend/README.md#L1)
 
 ## License
 

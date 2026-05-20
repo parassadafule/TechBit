@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Search as SearchIcon, Sparkles } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { searchAPI } from '../api';
 import PostCard from '../components/PostCard';
 import Input from '../components/ui/Input';
@@ -14,6 +15,25 @@ const Search = () => {
   const [semantic, setSemantic] = useState(false);
   const [selectedTags, setSelectedTags] = useState([]);
   const [selectedType, setSelectedType] = useState('');
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const nextQuery = params.get('q') || '';
+    const nextTags = params
+      .get('tags')
+      ?.split(',')
+      .map((tag) => tag.trim())
+      .filter(Boolean) || [];
+    const nextType = params.get('type') || '';
+    const nextSemantic = params.get('semantic') === 'true';
+
+    setQuery(nextQuery);
+    setSearchQuery(nextQuery);
+    setSelectedTags(nextTags);
+    setSelectedType(nextType);
+    setSemantic(nextSemantic);
+  }, [location.search]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['search', searchQuery, selectedTags, selectedType, semantic],
@@ -101,6 +121,7 @@ const Search = () => {
             {contentTypes.map(({ value, label }) => (
               <button
                 key={value}
+                type="button"
                 onClick={() => setSelectedType(value)}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   selectedType === value
@@ -122,10 +143,11 @@ const Search = () => {
               <Badge key={tag} variant="primary">
                 {tag}
                 <button
+                  type="button"
                   onClick={() => toggleTag(tag)}
                   className="ml-2 hover:text-primary-900"
                 >
-                  ×
+                  x
                 </button>
               </Badge>
             ))}
@@ -133,10 +155,11 @@ const Search = () => {
               <Badge variant="info">
                 {contentTypes.find(t => t.value === selectedType)?.label}
                 <button
+                  type="button"
                   onClick={() => setSelectedType('')}
                   className="ml-2 hover:text-blue-900"
                 >
-                  ×
+                  x
                 </button>
               </Badge>
             )}

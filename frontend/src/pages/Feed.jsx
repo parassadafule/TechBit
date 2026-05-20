@@ -81,24 +81,6 @@ const Feed = () => {
             ))}
           </div>
         </div>
-
-        
-        {/* <div className="flex items-center gap-2">
-          {sortOptions.map(({ value, label, icon: Icon }) => (
-            <button
-              key={value}
-              onClick={() => setSort(value)}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                sort === value
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <Icon size={18} />
-              <span className="font-medium">{label}</span>
-            </button>
-          ))}
-        </div> */}
       </div>
 
       {}

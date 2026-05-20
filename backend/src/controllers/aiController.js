@@ -2,6 +2,13 @@ const Post = require('../models/Post');
 const ragService = require('../services/ragService');
 const platformService = require('../services/platformService');
 const { semanticSearch } = require('../services/searchService');
+const crypto = require('crypto');
+const {
+  conversations,
+  ensureConversation,
+  getChatHistory,
+  saveChatHistory,
+} = require('../services/chatMemory');
 const logger = require('../utils/logger');
 
 const safeAsync = async (fn, fallback = null, logMsg = '') => {
@@ -177,12 +184,20 @@ const summarizeMultimodal = async (req, res) => {
 
 const queryAgent = async (req, res) => {
   try {
-    const query = String(req.body?.query || '').trim();
+    const message = String(req.body?.message || req.body?.query || '').trim();
+    let conversationId = String(req.body?.conversationId || '').trim();
     const userId = req.user?._id;
 
-    if (!query) {
-      return res.status(400).json({ error: 'Query is required' });
+    if (!message) {
+      return res.status(400).json({ error: 'Message is required' });
     }
+
+    conversationId = ensureConversation(conversationId) || crypto.randomUUID();
+    if (!conversations.has(conversationId)) {
+      conversations.set(conversationId, []);
+    }
+
+    const existingHistory = getChatHistory(conversationId);
 
     const User = require('../models/User');
     const user = userId
@@ -197,8 +212,8 @@ const queryAgent = async (req, res) => {
       interestPosts,
       recentPosts,
     ] = await Promise.all([
-      safeAsync(() => ragService.semanticSearch(query, 5), [], 'Chunk semantic search failed'),
-      safeAsync(() => semanticSearch(query, { limit: 5 }), [], 'Post semantic search failed'),
+      safeAsync(() => ragService.semanticSearch(message, 5), [], 'Chunk semantic search failed'),
+      safeAsync(() => semanticSearch(message, { limit: 5 }), [], 'Post semantic search failed'),
       interests.length
         ? safeAsync(
           () => Post.find({ tags: { $in: interests } })
@@ -227,13 +242,14 @@ const queryAgent = async (req, res) => {
     ).slice(0, 8);
 
     const response = await safeAsync(
-      () => ragService.generateRAGResponse(query, interests, docs),
+      () => ragService.generateRAGResponse(message, interests, docs, existingHistory),
       null
     );
 
     if (!response) {
       return res.json({
-        query,
+        conversationId,
+        message,
         answer: docs.length
           ? 'I could not generate a strong answer right now, but I found some related sources you can review.'
           : 'I could not find enough relevant information to answer that yet.',
@@ -242,8 +258,12 @@ const queryAgent = async (req, res) => {
       });
     }
 
+    const updatedHistory = [...existingHistory, { role: 'user', content: message }, { role: 'assistant', content: String(response.answer || '') }].slice(-10);
+    saveChatHistory(conversationId, updatedHistory);
+
     res.json({
-      query,
+      conversationId,
+      message,
       answer: response.answer,
       confidence: response.confidence || 0,
       fallback: response.fallback || false,

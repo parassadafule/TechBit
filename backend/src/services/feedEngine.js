@@ -149,14 +149,14 @@ async function fetchCandidatePosts(options = {}) {
 
   const posts = await Post.aggregate([
     { $match: matchStage },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'userId',
-        foreignField: '_id',
-        as: 'author',
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'author',
+        },
       },
-    },
     {
       $unwind: {
         path: '$author',

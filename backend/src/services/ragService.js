@@ -376,31 +376,35 @@ Produce:
   }
 
   
-  async generateRAGResponse(query, userInterests = [], retrievedDocs = []) {
+  async generateRAGResponse(query, userInterests = [], retrievedDocs = [], existingHistory = []) {
+    const requestId = crypto.randomUUID().slice(0, 8);
+
     try {
-      const requestId = crypto.randomUUID().slice(0, 8);
-      let searchResults = [];
       if (!query || !String(query).trim()) {
         return {
-          answer: 'Please ask a specific question so I can look for relevant context.',
+          answer:
+            'Please ask something specific so I can help properly.',
           confidence: 0,
           fallback: true,
         };
       }
 
-      if (!Array.isArray(retrievedDocs) || retrievedDocs.length === 0) {
-        try {
+      const recentChat = existingHistory
+        .slice(-10)
+        .map((msg) => `${msg.role.toUpperCase()}: ${msg.content}`)
+        .join('\n');
+
+      let searchResults = [];
+
+      try {
+        if (!Array.isArray(retrievedDocs) || retrievedDocs.length === 0) {
           searchResults = await this.semanticSearch(query, this.topK);
-        } catch (retrievalError) {
-          if (this.isModelUnavailableError(retrievalError)) {
-            logger.warn(`[${requestId}] Embeddings unavailable, continuing without vector results`, {
-              message: retrievalError.message,
-            });
-            searchResults = [];
-          } else {
-            throw retrievalError;
-          }
         }
+      } catch (retrievalError) {
+        logger.warn(
+          `[${requestId}] Semantic search failed`,
+          retrievalError.message
+        );
       }
 
       const allDocs = this.normalizeRetrievedDocs([
@@ -408,75 +412,125 @@ Produce:
         ...searchResults,
       ]).slice(0, this.topK);
 
-      if (allDocs.length === 0) {
-        return this.buildFallbackRAGResponse(query, userInterests, []);
+      let context = '';
+
+      if (allDocs.length > 0) {
+        context = allDocs
+          .map((doc, idx) => {
+            const title =
+              doc.metadata?.title || `Post ${idx + 1}`;
+
+            const source =
+              doc.metadata?.url ||
+              doc.metadata?.source ||
+              'Community';
+
+            const content =
+              doc.content ||
+              doc.pageContent ||
+              '';
+
+            return `
+      [${idx + 1}]
+      Title: ${title}
+      Source: ${source}
+      Content:${content.substring(0, 1200)}`;
+              })
+              .join('\n\n');
       }
 
-      const context = allDocs
-        .map((doc, idx) => {
-          const title = doc.metadata?.title || `Source ${idx + 1}`;
-          const source = doc.metadata?.url || doc.metadata?.source || 'Internal';
-          const content = doc.content || doc.pageContent || '';
-          return `[${idx + 1}] Title: ${title}\nSource: ${source}\nContent: ${content.substring(0, 1600)}`;
-        })
-        .join('\n\n');
+      const prompt = `
+      You are TechBit AI, an intelligent developer assistant and community chatbot.
 
-      const prompt = `You are a developer AI assistant answering a user's question.
+      Your behavior:
+      - Act like a modern conversational AI assistant for developers.
+      - Answer naturally and conversationally.
+      - Use retrieved posts/discussions and recent chat history when relevant.
+      - If context is weak or unrelated, avoid inventing facts.
+      - If you are uncertain, say so clearly and ask for clarification when needed.
+      - Prefer practical and developer-focused answers.
+      - Keep responses clean and readable.
+      - If multiple opinions exist, summarize them clearly.
+      - Prefer source-grounded answers over speculation.
 
-Rules:
-- Answer the user's actual question directly.
-- Use the evidence when it is relevant.
-- If the evidence is incomplete, give answer related to the question.
-- Keep the answer concise, practical, and developer-focused.
+      Recent Chat:
+      ${recentChat}
 
-Question: ${query}
+      User Interests:
+      ${userInterests.join(', ') || 'General Tech'}
 
-User Interests: ${userInterests.join(', ') || 'General development'}
+      User Question:
+      ${query}
 
-Evidence:
-${context}
+      Retrieved Community Posts:
+      ${context || 'No relevant posts found.'}
 
-Answer:`;
+      Now generate the best helpful answer. If the question depends on prior chat context, use Recent Chat carefully and answer only from the information available here:
+      `;
+
+      logger.debug(`[${requestId}] Calling LLM`);
 
       let response;
+
       try {
-        logger.debug(`[${requestId}] Calling LLM...`);
         response = await this.llm.call(prompt, {
           headers: {
             'ngrok-skip-browser-warning': 'true',
             'User-Agent': 'TechBit-Backend/1.0',
           },
         });
-        logger.debug(`[${requestId}] LLM returned`, {
-          responseLength: response?.length || 0,
-          responseStart: response?.substring(0, 100) || 'EMPTY',
-        });
       } catch (llmError) {
-        if (this.isModelUnavailableError(llmError)) {
-          logger.warn('LLM unavailable for RAG response. Returning fallback answer.', {
-            message: llmError.message,
-          });
-          return this.buildFallbackRAGResponse(query, userInterests, allDocs);
-        }
-        throw llmError;
+        logger.error(
+          `[${requestId}] LLM FAILED`,
+          llmError.message
+        );
+
+        return this.buildFallbackRAGResponse(
+          query,
+          userInterests,
+          allDocs
+        );
       }
 
-      logger.debug(`[${requestId}] generateRAGResponse SUCCESS`, {
-        contextCount: allDocs.length,
-        responseLength: response?.length || 0,
-      });
+      /**
+       * STEP 5:
+       * Dynamic confidence
+       */
+      let confidence = 0.6;
+
+      if (allDocs.length > 0) {
+        confidence = this.calculateConfidence(allDocs);
+      }
 
       return {
-        answer: response,
-        confidence: this.calculateConfidence(searchResults),
+        answer:
+          typeof response === 'string'
+            ? response.trim()
+            : response?.content?.trim() || 'No response generated.',
+        confidence,
+        sources: allDocs.map((doc) => ({
+          title: doc.metadata?.title,
+          url: doc.metadata?.url,
+          source: doc.metadata?.source,
+        })),
+        usedRAG: allDocs.length > 0,
         fallback: false,
       };
     } catch (error) {
-      logger.error(`[${requestId}] generateRAGResponse FAILED`, {
-        error: error.message,
-        stack: error.stack,
-      });
-      throw error;
+      logger.error(
+        `[${requestId}] generateRAGResponse FAILED`,
+        {
+          error: error.message,
+          stack: error.stack,
+        }
+      );
+
+      return {
+        answer:
+          'Something went wrong while generating response.',
+        confidence: 0,
+        fallback: true,
+      };
     }
   }
 

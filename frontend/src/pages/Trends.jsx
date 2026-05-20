@@ -1,13 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import {
-  TrendingUp,
-  Github,
-  Code,
-  RefreshCw,
-  Flame,
-  MessageSquare,
-  Newspaper,
-} from 'lucide-react';
+import { TrendingUp, Github, Code, RefreshCw, Flame, MessageSquare, Newspaper } from 'lucide-react';
 import { trendAPI } from '../api';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
@@ -108,15 +100,18 @@ const Trends = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {}
-      <div className="flex items-center justify-between">
+    <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-            <TrendingUp size={28} className="mr-3 text-primary-600" />
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center flex-wrap">
+            <TrendingUp
+              size={28}
+              className="mr-3 text-primary-600 flex-shrink-0"
+            />
             Trending Now
           </h1>
-          <p className="text-gray-600 mt-1">
+
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">
             Latest developer trends across platforms
           </p>
         </div>
@@ -125,13 +120,13 @@ const Trends = () => {
           onClick={handleRefresh}
           loading={isManualRefresh && fetchLatestMutation.isPending}
           variant="outline"
+          className="w-full sm:w-auto"
         >
           <RefreshCw size={18} className="mr-2" />
           Refresh
         </Button>
       </div>
 
-      {}
       <div className="flex flex-wrap gap-2">
         {sourceFilters.map((entry) => {
           const Icon = entry.icon;
@@ -141,97 +136,140 @@ const Trends = () => {
             <button
               key={entry.value || 'all'}
               onClick={() => setSource(entry.value)}
-              className={`px-3 py-2 rounded-lg text-sm border flex items-center gap-2 ${
-                active
-                  ? 'border-primary-600 bg-primary-50 text-primary-700'
-                  : 'border-gray-200 text-gray-600 hover:border-primary-300'
-              }`}
+              className={`
+                px-3 py-2 rounded-lg text-sm border flex items-center gap-2
+                transition-all duration-200
+                ${
+                  active
+                    ? 'border-primary-600 bg-primary-50 text-primary-700'
+                    : 'border-gray-200 text-gray-600 hover:border-primary-300'
+                }
+              `}
             >
               <Icon size={14} />
-              {entry.label}
+              <span className="whitespace-nowrap">
+                {entry.label}
+              </span>
             </button>
           );
         })}
       </div>
 
-      {}
       {isLoading ? (
         <div className="flex justify-center py-12">
           <Spinner size="lg" />
         </div>
       ) : filteredTrends.length === 0 ? (
-        <Card className="p-12 text-center">
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+        <Card className="p-6 sm:p-12 text-center">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
             No Trends Available
           </h3>
-          <p className="text-gray-600">
+
+          <p className="text-gray-600 text-sm sm:text-base">
             Try another filter or refresh trends
           </p>
         </Card>
       ) : (
         <div className="space-y-6">
-          {sourceSections.map(({ key, title, icon: Icon, badgeVariant }) => {
-            const trends = getTrendsBySource(key);
+          {sourceSections.map(
+            ({ key, title, icon: Icon, badgeVariant }) => {
+              const trends = getTrendsBySource(key);
 
-            if (trends.length === 0) return null;
+              if (trends.length === 0) return null;
 
-            return (
-              <Card key={key} className="p-6">
-                <div className="flex items-center space-x-3 mb-4">
-                  <Icon size={24} className="text-gray-900" />
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    {title}
-                  </h2>
-                  <Badge variant={badgeVariant}>
-                    {trends.length}
-                  </Badge>
-                </div>
+              return (
+                <Card key={key} className="p-4 sm:p-6">
+                  <div className="flex flex-wrap items-center gap-3 mb-4">
+                    <Icon
+                      size={24}
+                      className="text-gray-900 flex-shrink-0"
+                    />
 
-                <div className="space-y-4">
-                  {trends.map((trend, index) => (
-                    <div
-                      key={trend._id || `${trend.source}-${trend.topic}`}
-                      className="flex items-start space-x-4 pb-4 border-b border-gray-100 last:border-0"
-                    >
-                      <div className="w-8 text-center">
-                        <span className="text-lg font-bold text-gray-400">
-                          #{index + 1}
-                        </span>
-                      </div>
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                      {title}
+                    </h2>
 
-                      <div className="flex-1">
-                        <a
-                          href={trend.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-semibold text-gray-900 hover:text-primary-600 block"
-                        >
-                          {trend.topic}
-                        </a>
+                    <Badge variant={badgeVariant}>
+                      {trends.length}
+                    </Badge>
+                  </div>
 
-                        {trend.description && (
-                          <p className="text-sm text-gray-600 mb-2">
-                            {trend.description}
-                          </p>
-                        )}
-
-                        <div className="flex items-center space-x-4 text-sm text-gray-500">
-                          <span>
-                            Score: {trend.finalScore?.toLocaleString() || 0}
-                          </span>
-                          <span>
-                            {formatTimeAgo(
-                              trend.fetchedAt || trend.createdAt
-                            )}
+                  <div className="space-y-4">
+                    {trends.map((trend, index) => (
+                      <div
+                        key={trend._id || `${trend.source}-${trend.topic}`}
+                        className="
+                          flex flex-col sm:flex-row
+                          items-start
+                          gap-3 sm:gap-4
+                          pb-4
+                          border-b border-gray-100
+                          last:border-0
+                        "
+                      >
+                        <div className="w-auto sm:w-8 text-left sm:text-center flex-shrink-0">
+                          <span className="text-lg font-bold text-gray-400">
+                            #{index + 1}
                           </span>
                         </div>
+
+                        <div className="flex-1 min-w-0 w-full">
+                          <a
+                            href={trend.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="
+                              font-semibold text-gray-900
+                              hover:text-primary-600
+                              block
+                              break-words
+                              text-sm sm:text-base
+                            "
+                          >
+                            {trend.topic}
+                          </a>
+
+                          {trend.description && (
+                            <p
+                              className="
+                                text-sm text-gray-600
+                                mb-2 mt-1
+                                break-words
+                                leading-relaxed
+                              "
+                            >
+                              {trend.description}
+                            </p>
+                          )}
+
+                          <div
+                            className="
+                              flex flex-wrap
+                              items-center
+                              gap-x-4 gap-y-1
+                              text-xs sm:text-sm
+                              text-gray-500
+                            "
+                          >
+                            <span>
+                              Score:{' '}
+                              {trend.finalScore?.toLocaleString() || 0}
+                            </span>
+
+                            <span>
+                              {formatTimeAgo(
+                                trend.fetchedAt || trend.createdAt
+                              )}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            );
-          })}
+                    ))}
+                  </div>
+                </Card>
+              );
+            }
+          )}
         </div>
       )}
     </div>

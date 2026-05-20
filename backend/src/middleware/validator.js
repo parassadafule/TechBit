@@ -160,11 +160,33 @@ const validationRules = {
 
   aiQuery: [
     body('query')
-      .notEmpty()
-      .withMessage('Query is required')
+      .optional({ nullable: true, checkFalsy: true })
+      .isString()
+      .trim()
       .isLength({ max: 500 })
       .withMessage('Query too long')
       .customSanitizer(sanitizeInput),
+    body('message')
+      .optional({ nullable: true, checkFalsy: true })
+      .isString()
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage('Message too long')
+      .customSanitizer(sanitizeInput),
+    body('conversationId')
+      .optional({ nullable: true, checkFalsy: true })
+      .isString()
+      .trim()
+      .isLength({ max: 100 })
+      .withMessage('Conversation ID too long')
+      .customSanitizer(sanitizeInput),
+    body().custom((_, { req }) => {
+      const message = String(req.body?.message || req.body?.query || '').trim();
+      if (!message) {
+        throw new Error('Message is required');
+      }
+      return true;
+    }),
   ],
 
   summarize: [

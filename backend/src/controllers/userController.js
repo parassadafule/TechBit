@@ -6,6 +6,17 @@ const { serializePosts } = require('../utils/postResponse');
 const { emitNotification } = require('../socket/socketHandler');
 const logger = require('../utils/logger');
 
+const normalizeTopicList = (items = [], limit = 20) => {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  return Array.from(new Set(
+    items
+      .map((item) => String(item || '').trim())
+      .filter(Boolean)
+  )).slice(0, limit);
+};
 
 const getProfile = async (req, res) => {
   try {
@@ -42,8 +53,13 @@ const getProfile = async (req, res) => {
       ? (user.following || []).some((followingId) => followingId.toString() === currentUserId)
       : false;
 
+    const profile = user.toObject();
+    if (userId.toString() !== currentUserId) {
+      delete profile.currentlyLearning;
+    }
+
     res.json({
-      ...user.toObject(),
+      ...profile,
       contributionsCount,
       recentPosts,
       followersCount,
@@ -64,6 +80,7 @@ const updateProfile = async (req, res) => {
       name,
       username,
       interests,
+      currentlyLearning,
       goals,
       bio,
       location,
@@ -75,11 +92,10 @@ const updateProfile = async (req, res) => {
     if (name !== undefined) updateData.name = String(name || '').trim();
     if (username !== undefined) updateData.username = String(username || '').trim();
     if (interests) {
-      updateData.interests = Array.from(new Set(
-        interests
-          .map((item) => String(item || '').trim())
-          .filter(Boolean)
-      )).slice(0, 20);
+      updateData.interests = normalizeTopicList(interests, 20);
+    }
+    if (currentlyLearning) {
+      updateData.currentlyLearning = normalizeTopicList(currentlyLearning, 20);
     }
 
     if (goals) updateData.goals = { ...req.user.goals, ...goals };
@@ -93,7 +109,7 @@ const updateProfile = async (req, res) => {
       { new: true, runValidators: true }
     );
 
-    if (name !== undefined || username !== undefined || interests || goals || bio !== undefined || location !== undefined || website !== undefined) {
+    if (name !== undefined || username !== undefined || interests || currentlyLearning || goals || bio !== undefined || location !== undefined || website !== undefined) {
       logger.info(`Profile updated for user ${user.email}, learning path regeneration needed`);
     }
 

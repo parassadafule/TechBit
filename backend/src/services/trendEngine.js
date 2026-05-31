@@ -1,7 +1,6 @@
 const axios = require('axios');
 const logger = require('../utils/logger');
 
-const GITHUB_TRENDS_URL = 'https://api.ossinsight.io/v1/trends/repos/';
 const STACKOVERFLOW_TRENDS_URL = 'https://api.stackexchange.com/2.3/questions';
 const REDDIT_SUBREDDITS = ['programming', 'developer', 'technology'];
 const HACKERNEWS_TOP_STORIES_URL = 'https://hacker-news.firebaseio.com/v0/topstories.json';
@@ -63,40 +62,56 @@ function buildTrend({
 }
 
 async function fetchGitHubTrends() {
-  const response = await axios.get(GITHUB_TRENDS_URL, {
-    params: {
-      period: 'past_24_hours',
-      language: 'All',
-    },
-    timeout: 10000,
-  });
-
-  const rows = response.data?.data?.rows || [];
-  const now = new Date();
-
-  return rows
-    .slice(0, 30)
-    .map((repo) => {
-      const repoName = repo.repo_name || repo.repo_full_name || repo.name;
-      if (!repoName) {
-        return null;
+  try {
+    const response = await axios.get(
+      'https://api.github.com/search/repositories',
+      {
+        params: {
+          q: 'created:>2026-05-01',
+          sort: 'stars',
+          order: 'desc',
+          per_page: 30,
+        },
+        headers: {
+          Accept: 'application/vnd.github+json',
+          ...(process.env.GITHUB_TOKEN && {
+            Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+          }),
+        },
+        timeout: 10000,
       }
+    );
 
-      return buildTrend({
-        topic: repoName,
+    const repos = response.data?.items || [];
+    const now = new Date();
+
+    return repos.map((repo) =>
+      buildTrend({
+        topic: repo.full_name,
         source: 'github',
-        score: repo.stars || repo.total_stars || repo.star_gain || repo.contributors || 0,
+        score: repo.stargazers_count || 0,
         description: repo.description || 'No description available',
-        url: `https://github.com/${repoName}`,
+        url: repo.html_url,
         createdAt: now,
         data: {
-          owner: repo.owner_login || null,
-          language: repo.primary_language || repo.language || null,
-          repoName,
+          owner: repo.owner?.login || null,
+          language: repo.language || null,
+          repoName: repo.full_name,
+          forks: repo.forks_count || 0,
+          stars: repo.stargazers_count || 0,
+          watchers: repo.watchers_count || 0,
         },
-      });
-    })
-    .filter(Boolean);
+      })
+    );
+  } catch (error) {
+    console.error('GitHub Trends Fetch Error:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    });
+
+    return [];
+  }
 }
 
 async function fetchStackOverflowTrends() {
@@ -165,7 +180,7 @@ async function fetchRedditTrends() {
 
 async function fetchHackerNewsTrends() {
   const response = await axios.get(HACKERNEWS_TOP_STORIES_URL, {
-    timeout: 1000,
+    timeout: 2000,
   });
 
   const storyIds = Array.isArray(response.data) ? response.data.slice(0, 30) : [];

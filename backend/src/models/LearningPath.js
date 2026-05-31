@@ -53,6 +53,23 @@ const generatedTaskSchema = new mongoose.Schema(
       trim: true,
       maxlength: 160,
     },
+    resources: {
+      type: [
+        {
+          title: {
+            type: String,
+            trim: true,
+            maxlength: 100,
+          },
+          url: {
+            type: String,
+            trim: true,
+            maxlength: 500,
+          },
+        },
+      ],
+      default: [],
+    },
     deliverable: {
       type: String,
       trim: true,

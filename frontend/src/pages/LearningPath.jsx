@@ -29,6 +29,18 @@ const FALLBACK_SUGGESTIONS = [
 
 const getTaskKey = (milestone, task) => `${milestone.id}:${task.id}`;
 
+const getOrderedTasks = (path) => path.milestones.flatMap((milestone) => milestone.tasks.map((task) => ({
+  milestone,
+  task,
+  taskKey: getTaskKey(milestone, task),
+})));
+
+const getFirstIncompleteTaskKey = (path) => {
+  const orderedTasks = getOrderedTasks(path);
+  const firstIncompleteTask = orderedTasks.find(({ taskKey }) => !path.completedTasks?.[taskKey]);
+  return firstIncompleteTask?.taskKey || null;
+};
+
 const LearningPath = () => {
   const { user, setUser } = useAuth();
   const queryClient = useQueryClient();
@@ -103,7 +115,17 @@ const LearningPath = () => {
       durationWeeks,
       interests: [...currentlyLearning, ...userInterests],
     }),
-    onSuccess: (data) => {
+    onSuccess: (response) => {
+      const data = response?.data || response;
+
+      if (!data?.path) {
+        setDraftPath(null);
+        setError('Could not generate a learning path.');
+        return;
+      }
+
+      console.log('Generated path:', data);
+
       setError('');
       setDraftPath(data.path);
     },
@@ -221,6 +243,17 @@ const LearningPath = () => {
     deleteMutation.mutate(path._id);
   };
 
+  const completeActivePath = () => {
+    if (!activePath) {
+      return;
+    }
+
+    progressMutation.mutate({
+      pathId: activePath._id,
+      completedTasks: activePath.completedTasks || {},
+    });
+  };
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -251,11 +284,10 @@ const LearningPath = () => {
                     setGoal(topic);
                     setDraftPath(null);
                   }}
-                  className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-                    goal === topic
+                  className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${goal === topic
                       ? 'border-primary-600 bg-primary-50 text-primary-700'
                       : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   {topic}
                 </button>
@@ -263,7 +295,7 @@ const LearningPath = () => {
             </div>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+          {/* <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
             <Input
               label="Add your own topic"
               placeholder="e.g. GraphQL with React"
@@ -280,7 +312,7 @@ const LearningPath = () => {
               <Plus size={16} className="mr-2" />
               Add Topic
             </Button>
-          </div>
+          </div> */}
 
           <div className="grid gap-4 md:grid-cols-[1fr_180px_auto] md:items-end">
             <Input
@@ -293,7 +325,7 @@ const LearningPath = () => {
               }}
             />
             <Input
-              label="Duration"
+              label="Duration (in Weeks)"
               type="number"
               min="1"
               max="52"
@@ -369,11 +401,10 @@ const LearningPath = () => {
                   key={path.id}
                   type="button"
                   onClick={() => setActivePathId(path.id)}
-                  className={`w-full rounded-lg border p-3 text-left transition-colors ${
-                    activePath?.id === path.id
+                  className={`w-full rounded-lg border p-3 text-left transition-colors ${activePath?.id === path.id
                       ? 'border-primary-600 bg-primary-50'
                       : 'border-gray-200 bg-white hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   <p className="font-medium text-gray-900">{path.title}</p>
                   <p className="mt-1 text-xs text-gray-500">{path.durationWeeks} weeks</p>
@@ -393,16 +424,34 @@ const LearningPath = () => {
                       {activePath.durationWeeks} weeks | {activePath.totalHours} estimated hours
                     </p>
                   </div>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => deletePath(activePath.id)}
-                    loading={deleteMutation.isPending}
-                  >
-                    <Trash2 size={16} className="mr-2" />
-                    Delete
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    {progress.percent === 100 && !activePath.completedAt && (
+                      <Button
+                        size="sm"
+                        onClick={completeActivePath}
+                        loading={progressMutation.isPending}
+                      >
+                        <CheckCircle2 size={16} className="mr-2" />
+                        Mark Complete
+                      </Button>
+                    )}
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => deletePath(activePath.id)}
+                      loading={deleteMutation.isPending}
+                    >
+                      <Trash2 size={16} className="mr-2" />
+                      Delete
+                    </Button>
+                  </div>
                 </div>
+
+                {activePath.completedAt && (
+                  <div className="mb-3 inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-green-700">
+                    Completed
+                  </div>
+                )}
 
                 <div className="h-3 w-full rounded-full bg-gray-200">
                   <div
@@ -446,14 +495,18 @@ const PathMilestones = ({ path, onToggleTask }) => (
           {milestone.tasks.map((task) => {
             const taskKey = getTaskKey(milestone, task);
             const isCompleted = Boolean(path.completedTasks?.[taskKey]);
+            const firstIncompleteTaskKey = getFirstIncompleteTaskKey(path);
+            const isLocked = !isCompleted && firstIncompleteTaskKey !== null && taskKey !== firstIncompleteTaskKey;
+            const isNextTask = !isCompleted && taskKey === firstIncompleteTaskKey;
 
             return (
-              <div key={task.id} className={`rounded-lg border p-4 ${isCompleted ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
+              <div key={task.id} className={`rounded-lg border p-4 ${isCompleted ? 'border-green-200 bg-green-50' : 'border-gray-200'} ${isLocked ? 'opacity-70' : ''}`}>
                 <div className="flex items-start gap-3">
                   {onToggleTask ? (
                     <button
                       type="button"
                       onClick={() => onToggleTask(path.id, taskKey)}
+                      disabled={isLocked}
                       className="mt-0.5 text-gray-500 hover:text-primary-600"
                       aria-label={isCompleted ? 'Mark task pending' : 'Mark task complete'}
                     >
@@ -469,6 +522,12 @@ const PathMilestones = ({ path, onToggleTask }) => (
                         {task.title}
                       </h4>
                       <Badge variant={isCompleted ? 'success' : 'default'}>{task.estimatedHours}h</Badge>
+                      {isNextTask && !isCompleted && (
+                        <Badge variant="info">Next</Badge>
+                      )}
+                      {isLocked && (
+                        <Badge variant="default">Locked</Badge>
+                      )}
                     </div>
                     <p className="mt-1 text-sm leading-6 text-gray-600">{task.description}</p>
                     {task.deliverable && (
